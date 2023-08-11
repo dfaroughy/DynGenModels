@@ -1,0 +1,5 @@
+setup.py
+src/DynGenModels.egg-info/PKG-INFO
+src/DynGenModels.egg-info/SOURCES.txt
+src/DynGenModels.egg-info/dependency_links.txt
+src/DynGenModels.egg-info/top_level.txt
