@@ -7,6 +7,7 @@ class DataConfig:
 
     data_name : str = 'tops'
     features   : List[str] = field(default_factory = lambda : ['eta_rel', 'phi_rel'])
+    context    : List[str] = field(default_factory = lambda : [])
     preprocess : List[str] = field(default_factory = lambda : ['standardize'])
     datasets   : Dict[str, List[str]] = field(default_factory = lambda: {'name': ['file.hdf5', 'key']})
     labels : Dict[str, int] = field(default_factory = lambda:  {'name': 0} )
@@ -16,7 +17,6 @@ class DataConfig:
     def __post_init__(self):
         coords = ['eta_rel', 'phi_rel']
         self.features = [feature for feature in coords if feature not in self.features] + self.features
-
     
 @dataclass
 class TrainConfig:

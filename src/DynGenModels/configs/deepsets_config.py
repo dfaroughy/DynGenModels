@@ -9,7 +9,7 @@ class DeepSetsConfig(TrainConfig, DataConfig):
 
     model_name : str = 'DeepSets'
     dim_input  : int = 3 
-    dim_context : int = 1
+    dim_context : int = 0
     dim_hidden : int = 128   
     num_layers_1 : int = 2
     num_layers_2 : int = 3
@@ -18,6 +18,7 @@ class DeepSetsConfig(TrainConfig, DataConfig):
     def __post_init__(self):
         super().__post_init__()
         self.dim_input = len(self.features)
+        self.dim_context = len(self.context)
 
     def set_workdir(self, path: str='.', dir_name: str=None, save_config: bool=True):
         time = datetime.now().strftime("%Y.%m.%d_%Hh%M")

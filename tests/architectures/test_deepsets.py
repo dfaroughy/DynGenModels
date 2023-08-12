@@ -13,7 +13,7 @@ import torch
 
 def test_deepset_architecture(B, P, D, C, mask_type, device):
 
-    from DynGenModels.models.deepsets import DeepSetNet
+    from DynGenModels.models.deepsets import DeepSet
 
     B = 5 # batch size
     P = 10 # number of particles
@@ -27,23 +27,25 @@ def test_deepset_architecture(B, P, D, C, mask_type, device):
         mask = torch.rand((B, P))
         mask = (mask > 0.5).float()  # Convert to a binary mask
 
-    model = DeepSetNet(dim=D, dim_context=C, device=device)
+    model = DeepSet(dim=D, dim_context=C, device=device)
     output = model(t=time, x=features, context=context, mask=mask)
     assert True
 
 #...wrapper and config
 
 @pytest.mark.parametrize("dim_context", [0, 1, 2]) 
+@pytest.mark.parametrize("pooling", ["sum", "mean_sum", "mean"]) 
 @pytest.mark.parametrize("device", ["cpu", pytest.param("cuda", marks=pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available"))])
 @pytest.mark.parametrize("mask_type", ["ones", "random"])
 
-def test_deepset_wrapper_and_config(dim_context, mask_type, device):
+def test_deepset_wrapper_and_config(dim_context, pooling, mask_type, device):
 
     from DynGenModels.models.deepsets import DeepSets
-    from DynGenModels.trainer.configs.deepsets_config import DeepSetsConfig as config
+    from DynGenModels.configs.deepsets_config import DeepSetsConfig as config
 
     config.dim_context = dim_context
     config.device = device
+    config.pooling = pooling
 
     B = config.batch_size 
     P = config.max_num_constituents
