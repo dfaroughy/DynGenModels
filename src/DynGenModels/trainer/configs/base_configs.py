@@ -10,8 +10,8 @@ class DataConfig:
     preprocess : List[str] = field(default_factory = lambda : ['standardize'])
     datasets   : Dict[str, List[str]] = field(default_factory = lambda: {'name': ['file.hdf5', 'key']})
     labels : Dict[str, int] = field(default_factory = lambda:  {'name': 0} )
-    num_jets : int = 1000000 
-    num_constituents : int = 150
+    max_num_jets : int = 100
+    max_num_constituents : int = 30
 
     def __post_init__(self):
         coords = ['eta_rel', 'phi_rel']

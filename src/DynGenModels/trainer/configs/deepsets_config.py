@@ -8,24 +8,27 @@ from DynGenModels.trainer.configs.base_configs import TrainConfig, DataConfig
 class DeepSetsConfig(TrainConfig, DataConfig):
 
     model_name : str = 'DeepSets'
-    dim_input  : int = 2 
-    dim_output : int = 2
-    dim_hidden : int = 256   
-    num_layers_1 : int = 3
+    dim_input  : int = 3 
+    dim_context : int = 1
+    dim_hidden : int = 128   
+    num_layers_1 : int = 2
     num_layers_2 : int = 3
-    mkdir : bool = True
+    pooling : str = 'mean_sum'
 
     def __post_init__(self):
         super().__post_init__()
         self.dim_input = len(self.features)
-        self.dim_output = len(self.datasets) - 1
-        if self.mkdir:
-            time = datetime.now().strftime("%Y.%m.%d_%H:%M:%S")
-            self.workdir = make_dir('/home/df630/ClassifierMetric/results/{}.{}.{}_{}'.format(self.model_name, self.data_name, self.num_constituents, time), overwrite=True)
 
-    def save(self, path):
+    def set_workdir(self, path: str='.', dir_name: str=None, save_config: bool=True):
+        time = datetime.now().strftime("%Y.%m.%d_%Hh%M")
+        dir_name = '{}.{}.{}_{}'.format(self.model_name, self.data_name, self.max_num_constituents, time) if dir_name is None else dir_name
+        self.workdir = make_dir(path + '/' + dir_name, overwrite=False)
+        if save_config: self.save()
+
+    def save(self, path: str=None):
         config = asdict(self)
         print_table(config)
+        path = self.workdir + '/config.json' if path is None else path
         with open(path, 'w') as f:
             json.dump(config, f, indent=4)
 
@@ -33,5 +36,5 @@ class DeepSetsConfig(TrainConfig, DataConfig):
     def load(cls, path: str):
         with open(path, 'r') as json_file: config = json.load(json_file)
         print_table(config)
-        config['mkdir'] = False
+        # config['mkdir'] = False
         return cls(**config)
