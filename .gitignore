@@ -1,5 +1,6 @@
 .pytest_cache
 .vscode
+.DS_Store
 src/DynGenModels.egg-info
 data
 __pycache__
@@ -9,6 +10,6 @@ src/__pycache__
 test/__pycache__
 src/models/__pycache__
 src/DynGenModels/utils/__pycache__
-src/DynGenModels/traner/configs/__pycache__
+src/DynGenModels/trainer/configs/__pycache__
 test/architecture/__pycache__
 src/DynGenModels/__pycache__
