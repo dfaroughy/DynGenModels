@@ -5,12 +5,12 @@ class PreprocessData:
     def __init__(self, 
                  data, 
                  stats,
-                 methods: list=['center_jets', 'standardize'],
-                 compute_jet_features: bool=False):
+                 methods: list=['standardize']
+                 ):
         
         self.particle_features = data[:, :-1]
         self.mask = data[:, -1].unsqueeze(-1)
-        self.jet_features = self.get_jet_features() if compute_jet_features else None
+        self.jet_features = self.get_jet_features() if 'compute_jet_features' in methods else None
         self.mean, self.std, self.min, self.max = stats 
         self.methods = methods
     
@@ -30,19 +30,11 @@ class PreprocessData:
 
     def preprocess(self):
         for method in self.methods:
+            if method == 'compute_jet_features': continue
             method = getattr(self, method, None)
             if method and callable(method): method()
             else: raise ValueError('Preprocessing method {} not implemented'.format(method))
         
-    def center_jets(self):
-        if self.jet_features is None: raise ValueError('Jet features are not computed... set `compute_jet_features = True`')
-        N, P, D = self.particle_features.shape
-        jet_coords = self.jet_features[1:3] # eta, phi
-        jet_coords = jet_coords.repeat(N, 1) * self.mask
-        zeros = torch.zeros((N, D - 2))
-        jet_coords = torch.cat((jet_coords, zeros), dim=1)
-        self.particle_features -= jet_coords 
-
     def standardize(self,  sigma: float=1.0):
         self.particle_features = (self.particle_features * self.mean) * (sigma / self.std )
         self.particle_features *= self.mask
