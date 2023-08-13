@@ -3,8 +3,8 @@ import os
 import h5py
 import json
 from torch.utils.data import Dataset
-from DynGenModels.trainer.datamodules.jetnet.format import FormatData
-from DynGenModels.trainer.datamodules.jetnet.preprocess import PreprocessData
+from DynGenModels.datamodules.jetnet.format import FormatData
+from DynGenModels.datamodules.jetnet.preprocess import PreprocessData
 
 class JetNetDataset(Dataset):
 
@@ -14,19 +14,17 @@ class JetNetDataset(Dataset):
                  class_labels: dict=None,
                  particle_features: list=['eta_rel', 'phi_rel', 'pt_rel'],
                  preprocess : list=None,
-                 num_jets: int=None,
-                 num_constituents: int=150,
-                 remove_negative_pt: bool=False,
-                 compute_jet_features: bool=False):
+                 max_num_jets: int=None,
+                 max_num_constituents: int=150,
+                 remove_negative_pt: bool=False):
         
         self.path = dir_path
         self.datasets = datasets
         self.class_labels = class_labels
-        self.num_jets = num_jets
-        self.num_consts = num_constituents
+        self.max_num_jets = max_num_jets
+        self.max_num_constituents = max_num_constituents
         self.particle_features = particle_features
         self.remove_negative_pt = remove_negative_pt
-        self.compute_jet_features = compute_jet_features
         self.preprocess_methods = preprocess 
         self.summary_statistics = {}
         self.dataset_list = self.get_data()
@@ -73,8 +71,8 @@ class JetNetDataset(Dataset):
 
     def apply_formatting(self, sample):
         sample = FormatData(sample,
-                            num_jets=self.num_jets,
-                            num_constituents=self.num_consts,
+                            max_num_jets=self.max_num_jets,
+                            max_num_constituents=self.max_num_constituents,
                             particle_features=self.particle_features,
                             remove_negative_pt=self.remove_negative_pt)
         sample.format()
@@ -83,13 +81,13 @@ class JetNetDataset(Dataset):
     def apply_preprocessing(self, sample):
         sample = PreprocessData(data=sample, 
                                 stats=self.summary_statistics['dataset'],
-                                methods = self.preprocess_methods, 
-                                compute_jet_features=self.compute_jet_features)
+                                methods = self.preprocess_methods
+                                )
         sample.preprocess()
         return sample.particle_features, sample.jet_features
     
     def summary_stats(self, data):
-        data_flat = data.view(-1, data.shape[-1])
+        data_flat = data_flat = data.reshape(-1, data.shape[-1])  # data.view(-1, data.shape[-1])
         mask = data_flat[:, -1].bool()
         mean = torch.mean(data_flat[mask],dim=0)
         std = torch.std(data_flat[mask],dim=0)
@@ -107,8 +105,8 @@ class JetNetDataset(Dataset):
                      'class_labels': self.class_labels, 
                      'particle_features': self.particle_features,
                      'preprocess': self.preprocess, 
-                     'num_jets': self.num_jets, 
-                     'num_constituents': self.num_consts, 
+                     'max_num_jets': self.max_num_jets, 
+                     'max_num_constituents': self.max_num_constituents, 
                      'remove_negative_pt': self.remove_negative_pt}
         
         with open(path+'/dataset_configs.json', 'w') as json_file:

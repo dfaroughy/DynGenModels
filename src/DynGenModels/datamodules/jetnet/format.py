@@ -4,15 +4,15 @@ class FormatData:
 
     def __init__(self, 
                  data: torch.Tensor=None,
-                 num_jets: int=None,
-                 num_constituents: int=150,
+                 max_num_jets: int=None,
+                 max_num_constituents: int=150,
                  particle_features: list=['eta_rel', 'phi_rel', 'pt_rel'],
                  remove_negative_pt: bool=False
                 ):
         
         self.data = data
-        self.num_jets = data.shape[0] if num_jets is None else num_jets
-        self.num_consts = num_constituents
+        self.max_num_jets = data.shape[0] if max_num_jets is None else max_num_jets
+        self.max_num_consts = max_num_constituents
         self.particle_features = particle_features
         self.remove_negative_pt = remove_negative_pt
 
@@ -31,8 +31,8 @@ class FormatData:
     
     def zero_padding(self):
         N, P, D = self.data.shape
-        if P < self.num_consts:
-            zero_rows = torch.zeros(N, self.num_consts - P, D)
+        if P < self.max_num_consts:
+            zero_rows = torch.zeros(N, self.max_num_consts - P, D)
             self.data =  torch.cat((self.data, zero_rows), dim=1)
         else: pass 
 
@@ -60,15 +60,18 @@ class FormatData:
     
     def trim_dataset(self):
         if self.data_rank(3): 
-            self.data = self.data[:self.num_jets, :self.num_consts, :]
+            self.data = self.data[:self.max_num_jets, :self.max_num_consts, :]
         if self.data_rank(2): 
-            self.data = self.data[:self.num_jets, :] 
+            self.data = self.data[:self.max_num_jets, :] 
 
     def pt_order(self):
+        idx = None
         for i, f in enumerate(self.particle_features):
             if 'pt' in f: 
                 idx = i
                 break
+        if idx is None:
+            raise ValueError('No pt feature found in particle features list for pt_order() method')
         if self.data_rank(3): 
             _ , i = torch.sort(torch.abs(self.data[:, :, idx]), dim=1, descending=True) 
             self.data = torch.gather(self.data, 1, i.unsqueeze(-1).expand_as(self.data)) 
