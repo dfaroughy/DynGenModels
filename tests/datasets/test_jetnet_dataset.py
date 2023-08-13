@@ -46,7 +46,7 @@ def test_len(MAX_NUM_JETS):
                             remove_negative_pt=REMOVE_NEGATIVE_PT)
     assert len(dataset) == MAX_NUM_JETS * len(SAMPLE_DATASETS)
 
-#...4 Data retrieval amd shape Test
+#...4 Data retrieval and shape Test
 @pytest.mark.parametrize("PARTICLE_FEATURES",  [['eta_rel', 'phi_rel', 'pt_rel'], ['eta_rel', 'phi_rel', 'pt_rel', 'e_rel', 'R']])
 @pytest.mark.parametrize("MAX_NUM_CONSTITUENTS",  [20, 30])
 def test_data_shapesl(PARTICLE_FEATURES, MAX_NUM_CONSTITUENTS, PREPROCESS=['compute_jet_features']):
