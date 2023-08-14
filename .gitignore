@@ -3,6 +3,7 @@
 .DS_Store
 src/DynGenModels.egg-info
 data
+results
 __pycache__
 experiment/__pycache__
 notebook/__pycache__
@@ -13,3 +14,5 @@ src/DynGenModels/utils/__pycache__
 src/DynGenModels/trainer/configs/__pycache__
 test/architecture/__pycache__
 src/DynGenModels/__pycache__
+tests/tensorboard
+tests/best_model.pt
