@@ -51,10 +51,6 @@ class DeepSet(nn.Module):
 		elif self.pool == 'mean_sum': f = torch.cat([h_mean, h_sum], dim=-1)
 		return self.rho(f)
 
-
-class DeepSetUNet(nn.Module):
-    pass # TODO
-
 class DeepSets(nn.Module):
     ''' Wrapper class for the Deep Sets architecture'''
     def __init__(self, model_config):

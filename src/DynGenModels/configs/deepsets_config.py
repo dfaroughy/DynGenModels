@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from dataclasses import dataclass, asdict
 from DynGenModels.utils.utils import make_dir, print_table
-from DynGenModels.trainer.configs.base_configs import TrainConfig, DataConfig
+from DynGenModels.configs.base_configs import TrainConfig, DataConfig
 
 @dataclass
 class DeepSetsConfig(TrainConfig, DataConfig):
@@ -37,5 +37,4 @@ class DeepSetsConfig(TrainConfig, DataConfig):
     def load(cls, path: str):
         with open(path, 'r') as json_file: config = json.load(json_file)
         print_table(config)
-        # config['mkdir'] = False
         return cls(**config)

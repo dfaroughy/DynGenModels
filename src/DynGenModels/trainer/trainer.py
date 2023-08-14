@@ -6,10 +6,11 @@ import os
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
-class DynamicsTrainer(nn.Module):
+class TrainDynamics(nn.Module):
 
     def __init__(self, 
                  dynamics, 
+                 model: nn.Module,
                  dataloader: DataLoader,
                  epochs: int=100, 
                  lr: float=0.001, 
@@ -18,9 +19,10 @@ class DynamicsTrainer(nn.Module):
                  workdir: str='./',
                  seed=12345):
     
-        super(DynamicsTrainer, self).__init__()
+        super(TrainDynamics, self).__init__()
 
-        self.model = dynamics
+        self.dynamics = dynamics
+        self.model = model
         self.dataloader = dataloader
         self.workdir = workdir
         self.lr = lr
@@ -32,7 +34,7 @@ class DynamicsTrainer(nn.Module):
         self.writer = SummaryWriter(self.workdir+'/tensorboard')  # tensorboard writer
 
     def train(self):
-        train = Train_Step(loss_fn=self.model.loss)
+        train = Train_Step(loss_fn=self.dynamics.loss)
         valid = Validation_Step(loss_fn=self.model.loss, warmup_epochs=self.warmup_epochs)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)  
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, self.epochs)
@@ -52,29 +54,6 @@ class DynamicsTrainer(nn.Module):
                 break
             
         self.writer.close() 
-
-    # def load_model(self, path):
-    #     self.model.load_state_dict(torch.load(path, map_location=torch.device(self.model.device)))
-
-    # @torch.no_grad()
-    # def test(self, class_labels: dict):
-    #     self.predictions = {}
-    #     self.log_posterior = {}
-    #     temp = []
-
-    #     for batch in tqdm(self.dataloader.test, desc="testing"):
-    #         prob = self.model.predict(batch)
-    #         res = torch.cat([prob, batch['label'].unsqueeze(-1)], dim=-1)
-    #         temp.append(res)
-
-    #     self.predictions['datasets'] = torch.cat(temp, dim=0) 
-    #     labels = self.predictions['datasets'][:, -1] 
-
-    #     for _, label in class_labels.items():
-    #         self.predictions[label] = self.predictions['datasets'][labels == label][:, :-1]
-    #         if label != -1: self.log_posterior[label] = torch.log(self.predictions[label]).mean(dim=0)
-
-
 
 ##################
 

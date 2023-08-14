@@ -1,7 +1,7 @@
 
 import torch
 from torch.utils.data import DataLoader, Subset, ConcatDataset
-from DynGenModels.trainer.datamodules.jetnet.datasets import JetNetDataset
+from DynGenModels.datamodules.jetnet.datasets import JetNetDataset
 
 class JetNetDataLoader:
 
@@ -40,14 +40,14 @@ class JetNetDataLoader:
 
     def dataloader(self):
 
-        #...split datasets into truth data / models data
+        #...split datasets into 'reference' datasets (negative class label) not involved in training and 'model' dataets (positive class label) used during training.
 
         print("INFO: building dataloaders...")
         labels = [item['label'] for item in self.datasets]
         idx_ref, idx_models = [], []
 
         for i, label in enumerate(labels):
-            if label == -1: idx_ref.append(i)
+            if label < 0 : idx_ref.append(i)
             else: idx_models.append(i)
 
         samples_reference = Subset(self.datasets, idx_ref)
@@ -64,9 +64,9 @@ class JetNetDataLoader:
                                                                             valid_frac=self.data_split_fracs[1], 
                                                                             shuffle=True)
         
-        _, _, test_ref  = self.train_val_test_split(dataset=samples_reference, 
-                                                    train_frac=self.data_split_fracs[0], 
-                                                    valid_frac=self.data_split_fracs[1])
+        train_ref, valid_ref, test_ref  = self.train_val_test_split(dataset=samples_reference, 
+                                                                    train_frac=self.data_split_fracs[0], 
+                                                                    valid_frac=self.data_split_fracs[1])
         
         test = ConcatDataset([test_models, test_ref])
 

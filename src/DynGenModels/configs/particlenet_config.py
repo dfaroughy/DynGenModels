@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from dataclasses import dataclass, asdict
 from DynGenModels.utils.utils import make_dir, print_table
-from DynGenModels.trainer.configs.base_configs import TrainConfig, DataConfig
+from DynGenModels.configs.base_configs import TrainConfig, DataConfig
 
 @dataclass
 class ParticleNetConfig(TrainConfig, DataConfig):
