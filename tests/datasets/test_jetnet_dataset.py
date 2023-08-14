@@ -10,13 +10,17 @@ MAX_NUM_JETS = 10
 MAX_NUM_CONSTITUENTS = 20
 REMOVE_NEGATIVE_PT = True
 
-#...1 Instantiation Test
+
+#...TEST 1: Instantiation 
+
 def test_instantiation():
     dataset = JetNetDataset(dir_path=SAMPLE_DIR_PATH, datasets=SAMPLE_DATASETS, class_labels=SAMPLE_CLASS_LABELS, max_num_jets=MAX_NUM_JETS)
     assert isinstance(dataset, JetNetDataset)
 
-#...2 Iterability Test
+#...TEST 2: iterability Test
+
 @pytest.mark.parametrize("PREPROCESS", [None, ['compute_jet_features', 'standardize']]) 
+
 def test_iterability(PREPROCESS):
     dataset = JetNetDataset(dir_path=SAMPLE_DIR_PATH, 
                             datasets=SAMPLE_DATASETS, 
@@ -33,8 +37,10 @@ def test_iterability(PREPROCESS):
         if PREPROCESS is not None and 'compute_jet_features' in PREPROCESS: assert 'jet_features' in jet
         else: assert 'jet_features' not in jet
 
-#...3 Length Test
+#...TEST 3: length of dataset 
+
 @pytest.mark.parametrize("MAX_NUM_JETS", [10, 100]) 
+
 def test_len(MAX_NUM_JETS):
     dataset = JetNetDataset(dir_path=SAMPLE_DIR_PATH, 
                             datasets=SAMPLE_DATASETS, 
@@ -45,10 +51,13 @@ def test_len(MAX_NUM_JETS):
                             max_num_constituents=MAX_NUM_CONSTITUENTS,
                             remove_negative_pt=REMOVE_NEGATIVE_PT)
     assert len(dataset) == MAX_NUM_JETS * len(SAMPLE_DATASETS)
+    assert len(dataset) > 0
 
-#...4 Data retrieval and shape Test
+#...TEST 4: data retrieval and shape
+
 @pytest.mark.parametrize("PARTICLE_FEATURES",  [['eta_rel', 'phi_rel', 'pt_rel'], ['eta_rel', 'phi_rel', 'pt_rel', 'e_rel', 'R']])
 @pytest.mark.parametrize("MAX_NUM_CONSTITUENTS",  [20, 30])
+
 def test_data_shapesl(PARTICLE_FEATURES, MAX_NUM_CONSTITUENTS, PREPROCESS=['compute_jet_features']):
     dataset = JetNetDataset(dir_path=SAMPLE_DIR_PATH, 
                             datasets=SAMPLE_DATASETS, 
