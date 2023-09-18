@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 import torch.nn as nn
-from DynGenModels.trainer.trainer import DynamicsTrainer
+from DynGenModels.trainer.trainer import FlowMatchTrainer
 
 # Create a mock dataset and mock model for testing
 
@@ -24,7 +24,6 @@ class MockDynamics(nn.Module):
         outputs = self(inputs)
         return torch.nn.functional.cross_entropy(outputs, targets)
 
-
 @pytest.fixture
 def mock_dataloader():
     # Split the mock data into train and valid datasets
@@ -34,16 +33,13 @@ def mock_dataloader():
             self.valid = dataloader
     return DataLoaderWrapper()
 
-
-
-
 def test_trainer_instantiation(mock_dataloader):
-    trainer = DynamicsTrainer(MockDynamics(), mock_dataloader)
+    trainer = FlowMatchTrainer(MockDynamics(), mock_dataloader)
     assert isinstance(trainer.model, MockDynamics)
     assert trainer.epochs == 100
 
 def test_trainer_run(mock_dataloader):
-    trainer = DynamicsTrainer(MockDynamics(), mock_dataloader, epochs=2, early_stopping=None)
+    trainer = FlowMatchTrainer(MockDynamics(), mock_dataloader, epochs=2, early_stopping=None)
     trainer.train()
     assert len(trainer.model.fc.weight) == 2
 

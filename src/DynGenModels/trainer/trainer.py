@@ -5,12 +5,12 @@ from tqdm.auto import tqdm
 import os
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
+from DynGenModels.trainer.utils import Train_Step, Validation_Step
 
-class TrainDynamics(nn.Module):
+class FlowMatchTrainer(nn.Module):
 
     def __init__(self, 
-                 dynamics, 
-                 model: nn.Module,
+                 dynamics,
                  dataloader: DataLoader,
                  epochs: int=100, 
                  lr: float=0.001, 
@@ -19,10 +19,9 @@ class TrainDynamics(nn.Module):
                  workdir: str='./',
                  seed=12345):
     
-        super(TrainDynamics, self).__init__()
+        super(FlowMatchTrainer, self).__init__()
 
         self.dynamics = dynamics
-        self.model = model
         self.dataloader = dataloader
         self.workdir = workdir
         self.lr = lr
@@ -35,11 +34,11 @@ class TrainDynamics(nn.Module):
 
     def train(self):
         train = Train_Step(loss_fn=self.dynamics.loss)
-        valid = Validation_Step(loss_fn=self.model.loss, warmup_epochs=self.warmup_epochs)
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)  
+        valid = Validation_Step(loss_fn=self.dynamics.loss, warmup_epochs=self.warmup_epochs)
+        optimizer = torch.optim.Adam(self.dynamics.model.parameters(), lr=self.lr)  
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, self.epochs)
 
-        print('INFO: number of training parameters: {}'.format(sum(p.numel() for p in self.model.parameters())))
+        print('INFO: number of training parameters: {}'.format(sum(p.numel() for p in self.dynamics.model.parameters())))
         for epoch in tqdm(range(self.epochs), desc="epochs"):
             train.update(dataloader=self.dataloader.train, optimizer=optimizer)       
             valid.update(dataloader=self.dataloader.valid)
@@ -47,85 +46,10 @@ class TrainDynamics(nn.Module):
             self.writer.add_scalar('Loss/train', train.loss, epoch)
             self.writer.add_scalar('Loss/valid', valid.loss, epoch)
 
-            if valid.stop(save_best=self.model,
+            if valid.stop(save_best=self.dynamics.model,
                           early_stopping=self.early_stopping, 
                           workdir=self.workdir): 
                 print("INFO: early stopping triggered! Reached maximum patience at {} epochs".format(epoch))
                 break
             
         self.writer.close() 
-
-##################
-
-
-class Train_Step(nn.Module):
-
-    def __init__(self, loss_fn):
-        super(Train_Step, self).__init__()
-        self.loss_fn = loss_fn
-        self.loss = 0
-        self.epoch = 0
-        self.print_epoch = 10
-        self.losses = []
-
-    def update(self, dataloader: DataLoader, optimizer):
-        self.loss = 0
-        self.epoch += 1
-
-        for batch in dataloader:
-            optimizer.zero_grad()
-            loss_current = self.loss_fn(batch)
-            loss_current.backward()
-            optimizer.step()  
-            self.loss += loss_current.detach().cpu().numpy()
-
-        self.loss = self.loss / len(dataloader.dataset)
-
-        if self.epoch % self.print_epoch  == 0:
-            print("\t Training loss: {}".format(self.loss))
-
-        self.losses.append(self.loss) 
-
-class Validation_Step(nn.Module):
-
-    def __init__(self, loss_fn, warmup_epochs=10):
-        super(Validation_Step, self).__init__()
-        self.loss_fn = loss_fn
-        self.loss = 0
-        self.epoch = 0
-        self.patience = 0
-        self.loss_min = np.inf
-        self.terminate_loop = False
-        self.data_size = 0
-        self.print_epoch = 5
-        self.warmup_epochs = warmup_epochs
-        self.losses = []
-
-    @torch.no_grad()
-    def update(self, dataloader: DataLoader):
-        self.loss = 0
-        self.epoch += 1
-
-        for batch in dataloader:
-            loss_current = self.loss_fn(batch)
-            self.loss += loss_current.detach().cpu().numpy()
-
-        self.loss = self.loss / len(dataloader.dataset)
-        self.losses.append(self.loss) 
-
-    @torch.no_grad()
-    def stop(self, save_best, early_stopping, workdir):
-        if early_stopping is not None:
-            if self.loss < self.loss_min:
-                self.loss_min = self.loss
-                self.patience = 0
-                
-                torch.save(save_best.state_dict(), workdir + '/best_model.pth')    
-            else: self.patience += 1 if self.epoch > self.warmup_epochs else 0
-            if self.patience >= early_stopping: self.terminate_loop = True
-        else:
-            torch.save(save_best.state_dict(), workdir + '/best_model.pth')
-        if self.epoch % self.print_epoch == 1:
-            print("\t Test loss: {}  (min loss: {})".format(self.loss, self.loss_min))
-        return self.terminate_loop
-

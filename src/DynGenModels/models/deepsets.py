@@ -29,7 +29,7 @@ class DeepSet(nn.Module):
                 
 		super(DeepSet, self).__init__()
                 
-		dim_hidden_pool = (2 if pooling=='mean_sum' else 1) * dim_hidden
+		dim_hidden_pool = (2 if pooling == 'mean_sum' else 1) * dim_hidden
 		self.x_embedding = nn.Linear(dim + dim_context, dim_hidden//2).to(device)
 		self.t_embedding = nn.Sequential(FourierFeatures(dim=dim_hidden//2), nn.Linear(dim_hidden//2, dim_hidden//2)).to(device)
 		layers_1 = [nn.Linear(dim_hidden, dim_hidden), nn.LeakyReLU()] * num_layers_1 
@@ -57,12 +57,12 @@ class DeepSets(nn.Module):
         super(DeepSets, self).__init__()
         self.device = model_config.device
         self.deepset = DeepSet(dim=model_config.dim_input, 
-                                  dim_hidden=model_config.dim_hidden, 
-                                  dim_context=model_config.dim_context,	
-                                  num_layers_1=model_config.num_layers_1,
-                                  num_layers_2=model_config.num_layers_2,
-                                  pooling=model_config.pooling,
-                                  device=model_config.device)
+                                dim_hidden=model_config.dim_hidden, 
+                                dim_context=model_config.dim_context,	
+                                num_layers_1=model_config.num_layers_1,
+                                num_layers_2=model_config.num_layers_2,
+                                pooling=model_config.pooling,
+                                device=model_config.device)
                 
     def forward(self, t, x, context, mask):
         return self.deepset.forward(t, x, context, mask)
