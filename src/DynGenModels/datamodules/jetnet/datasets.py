@@ -35,7 +35,8 @@ class JetNetDataset(Dataset):
         output['label'] = labels[idx]
         output['mask'] = datasets[idx][:, -1]
         particles, jet = self.apply_preprocessing(sample=datasets[idx]) if self.preprocess_methods is not None else (datasets[idx], None) 
-        output['particle_features'] = particles
+        output['target'] = particles
+        output['source'] = torch.rand_like(particles)
         if jet is not None: output['jet_features'] = jet 
         return output
 

@@ -3,7 +3,7 @@ from DynGenModels.datamodules.jetnet.dataloader import JetNetDataLoader
 from DynGenModels.models.deepsets import DeepSets
 from DynGenModels.configs.deepsets_config import DeepSetsConfig as Config
 from DynGenModels.trainer.trainer import FlowMatchTrainer
-from DynGenModels.dynamics.flowmatch import SimpleCFM
+from DynGenModels.dynamics.flowmatch import SimplifiedCFM
 
 config = Config(features    = ['eta_rel', 'phi_rel', 'pt_rel', 'e_rel',  'R'],
                 preprocess  = ['standardize'],
@@ -38,12 +38,6 @@ if __name__ == "__main__":
                             remove_negative_pt = True
                             ) 
     dataloader = JetNetDataLoader(datasets=datasets, data_split_fracs=config.data_split_fracs, batch_size=config.batch_size)
-
-    for b in dataloader.train:
-        print(b)
-        break
-
-    dynamics = SimpleCFM(model=deepsets)
+    dynamics = SimplifiedCFM(model=deepsets)
     model = FlowMatchTrainer(dynamics=dynamics, dataloader=dataloader)
-
     model.train()

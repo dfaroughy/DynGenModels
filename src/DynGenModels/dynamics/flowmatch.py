@@ -54,7 +54,7 @@ import torch
 
 ####################################################
 
-class SimpleCFM:
+class SimplifiedCFM:
 
 	def __init__(self, model, sigma_min=1e-6):
 		self.sigma_min = sigma_min
@@ -83,7 +83,7 @@ class SimpleCFM:
 
 		target = batch['target']
 		source = batch['source'] 
-		context = batch['context']
+		context = None # batch['context']
 		mask = batch['mask']
 
 		t = torch.rand(target.shape[:-1], device=target.device).unsqueeze(-1)
@@ -92,6 +92,10 @@ class SimpleCFM:
 		mean, std = self.probability_path(t)
 		x = mean + std * torch.randn_like(source)
 		v = self.model(t=t, x=x, context=context, mask=mask)
-		u = self.cond_vector_field(x, t) * mask
+		print(v)
+		u = self.cond_vector_field(x, t)
+		u *= mask.unsqueeze(-1)
+
+		print(v.shape, u.shape)
 		loss = torch.square(v - u)
 		return torch.mean(loss)
