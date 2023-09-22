@@ -1,13 +1,13 @@
 
 import torch
 from torch.utils.data import DataLoader, Subset, ConcatDataset
-from DynGenModels.datamodules.jetnet.datasets import JetNetDataset
+from DynGenModels.datamodules.jetnet.datasets import FermiDataset
 
 class FermiDataLoader:
 
     def __init__(self, 
-                 datasets: JetNetDataset, 
-                 data_split_fracs: list=[0.5, 0.2, 0.3],
+                 datasets: FermiDataset, 
+                 data_split_fracs: list=[0.7, 0.2, 0.1],
                  batch_size: int=1024 
                  ):
 
@@ -40,18 +40,7 @@ class FermiDataLoader:
 
     def dataloader(self):
 
-        #...split datasets into 'reference' datasets (negative class label) not involved in training and 'model' dataets (positive class label) used during training.
-
         print("INFO: building dataloaders...")
-        labels = [item['label'] for item in self.datasets]
-        idx_ref, idx_models = [], []
-
-        for i, label in enumerate(labels):
-            if label < 0 : idx_ref.append(i)
-            else: idx_models.append(i)
-
-        samples_reference = Subset(self.datasets, idx_ref)
-        samples_models = Subset(self.datasets, idx_models)
 
         #...get training / validation / test samples   
 
@@ -59,21 +48,15 @@ class FermiDataLoader:
                                                                    self.data_split_fracs[1], 
                                                                    self.data_split_fracs[2]))
         
-        train_models, valid_models, test_models = self.train_val_test_split(dataset=samples_models, 
-                                                                            train_frac=self.data_split_fracs[0], 
-                                                                            valid_frac=self.data_split_fracs[1], 
-                                                                            shuffle=True)
-        
-        train_ref, valid_ref, test_ref  = self.train_val_test_split(dataset=samples_reference, 
-                                                                    train_frac=self.data_split_fracs[0], 
-                                                                    valid_frac=self.data_split_fracs[1])
-        
-        test = ConcatDataset([test_models, test_ref])
+        train, valid, test = self.train_val_test_split(dataset=self.datasets, 
+                                                       train_frac=self.data_split_fracs[0], 
+                                                       valid_frac=self.data_split_fracs[1], 
+                                                       shuffle=True)
 
         #...create dataloaders
 
-        self.train = DataLoader(dataset=train_models, batch_size=self.batch_size, shuffle=True)
-        self.valid = DataLoader(dataset=valid_models,  batch_size=self.batch_size, shuffle=False)
+        self.train = DataLoader(dataset=train, batch_size=self.batch_size, shuffle=True)
+        self.valid = DataLoader(dataset=valid,  batch_size=self.batch_size, shuffle=False)
         self.test = DataLoader(dataset=test,  batch_size=self.batch_size, shuffle=True)
 
         print('INFO: train size: {}, validation size: {}, testing sizes: {}'.format(len(self.train.dataset), 
