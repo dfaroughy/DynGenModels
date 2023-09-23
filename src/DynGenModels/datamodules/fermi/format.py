@@ -12,9 +12,11 @@ class FormatData:
     @property 
     def theta(self): 
         return self.data[...,0]
+    
     @property 
     def phi(self): 
         return self.data[...,1]
+    
     @property 
     def energy(self): 
         return self.data[...,2]
@@ -31,4 +33,3 @@ class FormatData:
         self.selection_cuts(feature='theta', cut=self.cuts['theta'])
         self.selection_cuts(feature='phi', cut=self.cuts['phi'])
     
-

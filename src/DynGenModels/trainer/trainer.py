@@ -15,7 +15,7 @@ class FlowMatchTrainer(nn.Module):
                  epochs: int=100, 
                  lr: float=0.001, 
                  early_stopping : int=10,
-                 warmup_epochs: int=20,
+                 warmup_epochs: int=3,
                  workdir: str='./',
                  seed=12345):
     

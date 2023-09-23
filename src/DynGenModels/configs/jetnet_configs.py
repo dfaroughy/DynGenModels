@@ -29,4 +29,3 @@ class TrainConfig:
     warmup_epochs : int = 100    
     lr : float = 0.001
     seed : int = 12345
-

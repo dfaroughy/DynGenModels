@@ -1,28 +1,33 @@
 import torch
+import numpy as np
 from torch.utils.data import Dataset
 from DynGenModels.datamodules.fermi.format import FormatData
-from DynGenModels.datamodules.fermi.preprocess import PreprocessData
+from DynGenModels.datamodules.fermi.process import PreProcessData
 
 class FermiDataset(Dataset):
 
     def __init__(self, 
                  dir_path: str=None, 
+                 dataset: str=None,
                  cuts: dict=None,
                  preprocess : list=None
                  ):
         
         self.path = dir_path
+        self.dataset = dataset
         self.cuts = cuts
         self.preprocess_methods = preprocess 
-        self.summary_statistics = {}
+        self.summary_statistics = None
         self.dataset_list = self.get_data()
 
     def __getitem__(self, idx):
         output = {}
         datasets = self.dataset_list
-        galactic_features = self.apply_preprocessing(sample=datasets[idx]) if self.preprocess_methods is not None else datasets[idx] 
+        galactic_features = self.apply_preprocessing(sample=datasets[idx]) if self.preprocess_methods is not None else datasets[idx]
         output['target'] = galactic_features
-        output['source'] = torch.rand_like(galactic_features)
+        output['source'] = torch.rand_like(galactic_features, dtype=torch.float32)
+        output['mask'] = torch.ones_like(galactic_features[..., 0])
+        output['context'] = torch.empty_like(galactic_features[..., 0])
         return output
 
     def __len__(self):
@@ -33,12 +38,11 @@ class FermiDataset(Dataset):
             yield self[i]
 
     def get_data(self):
-        print("INFO: loading and preprocessing data...")
-        dataset = torch.tensor(np.load(self.path))
+        dataset = torch.tensor(np.load(self.path+'/'+self.dataset), dtype=torch.float32)
         dataset = self.apply_formatting(dataset)
-        print(dataset.shape)
+        self.summary_statistics = self.summary_stats(dataset)
+        print("INFO: loading and preprocessing data...")
         print('\t- dataset: {} \n \t- shape: {}'.format(self.path, dataset.shape))
-        self.summary_statistics['dataset'] = self.summary_stats(dataset)
         return dataset
 
     def apply_formatting(self, sample):
@@ -47,7 +51,7 @@ class FermiDataset(Dataset):
         return sample.data
     
     def apply_preprocessing(self, sample):
-        sample = PreprocessData(data=sample, 
+        sample = PreProcessData(data=sample, 
                                 stats=self.summary_statistics['dataset'],
                                 methods = self.preprocess_methods
                                 )

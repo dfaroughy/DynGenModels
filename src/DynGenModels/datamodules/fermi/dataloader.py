@@ -1,12 +1,12 @@
 
 import torch
-from torch.utils.data import DataLoader, Subset, ConcatDataset
-from DynGenModels.datamodules.jetnet.datasets import FermiDataset
+from torch.utils.data import DataLoader, Subset
+from torch.utils.data import Dataset
 
 class FermiDataLoader:
 
     def __init__(self, 
-                 datasets: FermiDataset, 
+                 datasets: Dataset, 
                  data_split_fracs: list=[0.7, 0.2, 0.1],
                  batch_size: int=1024 
                  ):
