@@ -10,7 +10,6 @@ class Train_Step(nn.Module):
         self.loss_fn = loss_fn
         self.loss = 0
         self.epoch = 0
-        self.print_epoch = 10
         self.losses = []
 
     def update(self, dataloader: DataLoader, optimizer):
@@ -25,10 +24,6 @@ class Train_Step(nn.Module):
             self.loss += loss_current.detach().cpu().numpy()
 
         self.loss = self.loss / len(dataloader.dataset)
-
-        if self.epoch % self.print_epoch  == 0:
-            print("\t Training loss: {}".format(self.loss))
-
         self.losses.append(self.loss) 
 
 class Validation_Step(nn.Module):
@@ -70,6 +65,6 @@ class Validation_Step(nn.Module):
         else:
             torch.save(save_best.state_dict(), workdir + '/best_model.pth')
         if self.epoch % self.print_epoch == 1:
-            print("\t Test loss: {}  (min loss: {})".format(self.loss, self.loss_min))
+            print("\t test loss: {}  (min loss: {})".format(self.loss, self.loss_min))
         return self.terminate_loop
 
