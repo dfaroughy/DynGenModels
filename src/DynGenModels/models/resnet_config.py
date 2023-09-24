@@ -2,10 +2,10 @@ import json
 from datetime import datetime
 from dataclasses import dataclass, asdict
 from DynGenModels.utils.utils import make_dir, print_table
-from DynGenModels.configs.fermi_configs import TrainConfig, DataConfig
+from DynGenModels.configs.fermi_configs import DataConfig, TrainConfig, SamplingConfig
 
 @dataclass
-class ResNetConfig(TrainConfig, DataConfig):
+class ResNetConfig(SamplingConfig, TrainConfig, DataConfig):
 
     model_name : str = 'ResNet'
     dim_input  : int = 3 
