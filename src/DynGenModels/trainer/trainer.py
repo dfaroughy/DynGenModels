@@ -35,10 +35,10 @@ class FlowMatchTrainer(nn.Module):
     def train(self):
         train = Train_Step(loss_fn=self.dynamics.loss)
         valid = Validation_Step(loss_fn=self.dynamics.loss, warmup_epochs=self.warmup_epochs)
-        optimizer = torch.optim.Adam(self.dynamics.model.parameters(), lr=self.lr)  
+        optimizer = torch.optim.Adam(self.dynamics.net.parameters(), lr=self.lr)  
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, self.epochs)
 
-        print('INFO: number of training parameters: {}'.format(sum(p.numel() for p in self.dynamics.model.parameters())))
+        print('INFO: number of training parameters: {}'.format(sum(p.numel() for p in self.dynamics.net.parameters())))
         for epoch in tqdm(range(self.epochs), desc="epochs"):
             train.update(dataloader=self.dataloader.train, optimizer=optimizer)       
             valid.update(dataloader=self.dataloader.valid)
@@ -46,7 +46,7 @@ class FlowMatchTrainer(nn.Module):
             self.writer.add_scalar('Loss/train', train.loss, epoch)
             self.writer.add_scalar('Loss/valid', valid.loss, epoch)
 
-            if valid.stop(save_best=self.dynamics.model,
+            if valid.stop(save_best=self.dynamics.net,
                           early_stopping=self.early_stopping, 
                           workdir=self.workdir): 
                 print("INFO: early stopping triggered! Reached maximum patience at {} epochs".format(epoch))
