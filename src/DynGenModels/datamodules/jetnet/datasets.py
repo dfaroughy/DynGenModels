@@ -3,8 +3,7 @@ import os
 import h5py
 import json
 from torch.utils.data import Dataset
-from DynGenModels.datamodules.jetnet.format import FormatData
-from DynGenModels.datamodules.jetnet.preprocess import PreprocessData
+from DynGenModels.datamodules.jetnet.dataprocess import FormatData, PreprocessData
 
 class JetNetDataset(Dataset):
 

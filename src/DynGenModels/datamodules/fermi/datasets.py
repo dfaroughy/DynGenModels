@@ -1,8 +1,8 @@
 import torch
 import numpy as np
 from torch.utils.data import Dataset
-from DynGenModels.datamodules.fermi.dataprocess import FormatData
-from DynGenModels.datamodules.fermi.dataprocess import PreProcessData
+
+from DynGenModels.datamodules.fermi.dataprocess import FormatData, PreProcessData
 
 class FermiDataset(Dataset):
 
