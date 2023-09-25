@@ -61,9 +61,11 @@ class Validation_Step(nn.Module):
                 self.patience = 0
                 torch.save(save_best.state_dict(), workdir + '/best_model.pth')    
             else: self.patience += 1 if self.epoch > self.warmup_epochs else 0
-            if self.patience >= early_stopping: self.terminate_loop = True
+            if self.patience >= early_stopping: 
+                self.terminate_loop = True
+                torch.save(save_best.state_dict(), workdir + '/last_epoch_model.pth')
         else:
-            torch.save(save_best.state_dict(), workdir + '/best_model.pth')
+            torch.save(save_best.state_dict(), workdir + '/last_epoch_model.pth')
         if self.epoch % self.print_epoch == 1:
             print("\t test loss: {}  (min loss: {})".format(self.loss, self.loss_min))
         return self.terminate_loop

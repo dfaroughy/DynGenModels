@@ -5,6 +5,7 @@ from tqdm.auto import tqdm
 import os
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
+
 from DynGenModels.trainer.utils import Train_Step, Validation_Step
 
 class FlowMatchTrainer(nn.Module):
@@ -19,8 +20,6 @@ class FlowMatchTrainer(nn.Module):
                  workdir: str='./',
                  seed=12345):
     
-        super(FlowMatchTrainer, self).__init__()
-
         self.dynamics = dynamics
         self.dataloader = dataloader
         self.workdir = workdir
@@ -39,6 +38,7 @@ class FlowMatchTrainer(nn.Module):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, self.epochs)
 
         print('INFO: number of training parameters: {}'.format(sum(p.numel() for p in self.dynamics.net.parameters())))
+        
         for epoch in tqdm(range(self.epochs), desc="epochs"):
             train.update(dataloader=self.dataloader.train, optimizer=optimizer)       
             valid.update(dataloader=self.dataloader.valid)
