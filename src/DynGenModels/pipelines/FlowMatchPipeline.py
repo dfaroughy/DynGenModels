@@ -1,6 +1,7 @@
 import torch
 from torchdyn.core import NeuralODE
 from tqdm.auto import tqdm
+from dataclasses import dataclass
 
 from DynGenModels.trainer.trainer import FlowMatchTrainer
 from DynGenModels.pipelines.utils import TorchdynWrapper
@@ -11,26 +12,25 @@ class FlowMatchPipeline:
                  trained_model: FlowMatchTrainer=None, 
                  source_input: torch.Tensor=None,
                  postprocessor: object=None,
-                 solver: str='euler',
-                 num_sampling_steps: int=100,
-                 sensitivity: str='adjoint',
-                 atol: float=1e-4,
-                 rtol: float=1e-4):
+                 config: dataclass=None,
+                 ):
         
         self.model = trained_model
         self.source = source_input
         self.postprocessor = postprocessor
         self.net = self.model.dynamics.net
-        self.stats = self.model.dataloader.datasets.summary_stats
-        self.postprocess_methods = ['inverse_' + method for method in self.model.dataloader.datasets.preprocess_methods[::-1]]
-        self.time = torch.linspace(self.model.dynamics.T, 0, num_sampling_steps)
-        self.solver = solver
-        self.sensitivity = sensitivity
-        self.atol = atol
-        self.rtol = rtol
+        self.time = torch.linspace(0, self.model.dynamics.T, config.num_sampling_steps)
+        self.solver = config.solver
+        self.sensitivity = config.sensitivity
+        self.atol = config.atol
+        self.rtol = config.rtol
         self.trajectories = self.ODEsolver()
 
-        print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))
+        if self.postprocessor is not None:
+            self.stats = self.model.dataloader.datasets.summary_stats if postprocessor is not None else None
+            self.postprocess_methods = ['inverse_' + method for method in self.model.dataloader.datasets.preprocess_methods[::-1]]
+            print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))
+
         self.target = self.postprocess(self.trajectories[-1]) if postprocessor is not None else self.trajectories[-1]
 
     @torch.no_grad()

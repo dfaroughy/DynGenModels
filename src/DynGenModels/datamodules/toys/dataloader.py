@@ -1,19 +1,17 @@
 
 import torch
+
 from torch.utils.data import DataLoader, Subset
 from torch.utils.data import Dataset
+from dataclasses import dataclass
 
 class ToysDataLoader:
 
-    def __init__(self, 
-                 datasets: Dataset, 
-                 data_split_fracs: list=[0.7, 0.3, 0.0],
-                 batch_size: int=1024 
-                 ):
+    def __init__(self, datasets: Dataset, config: dataclass):
 
         self.datasets = datasets        
-        self.data_split_fracs = data_split_fracs
-        self.batch_size = batch_size
+        self.data_split_fracs = config.data_split_fracs
+        self.batch_size = config.batch_size
         self.dataloader()
 
     def train_val_test_split(self, dataset, train_frac, valid_frac, shuffle=False):

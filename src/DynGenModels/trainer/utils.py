@@ -40,7 +40,7 @@ class Validation_Step(nn.Module):
         self.print_epoch = 5
         self.warmup_epochs = warmup_epochs
         self.losses = []
-
+        
     @torch.no_grad()
     def update(self, dataloader: DataLoader):
         self.loss = 0
@@ -59,7 +59,7 @@ class Validation_Step(nn.Module):
             if self.loss < self.loss_min:
                 self.loss_min = self.loss
                 self.patience = 0
-                torch.save(save_best.state_dict(), workdir + '/best_model.pth')    
+                torch.save(save_best.state_dict(), workdir + '/best_model.pth')  
             else: self.patience += 1 if self.epoch > self.warmup_epochs else 0
             if self.patience >= early_stopping: 
                 self.terminate_loop = True

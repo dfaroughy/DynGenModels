@@ -5,6 +5,7 @@ from tqdm.auto import tqdm
 import os
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
+from dataclasses import dataclass
 
 from DynGenModels.trainer.utils import Train_Step, Validation_Step
 
@@ -13,21 +14,17 @@ class FlowMatchTrainer(nn.Module):
     def __init__(self, 
                  dynamics,
                  dataloader: DataLoader,
-                 epochs: int=100, 
-                 lr: float=0.001, 
-                 early_stopping : int=10,
-                 warmup_epochs: int=3,
-                 workdir: str='./',
-                 seed=12345):
+                 config: dataclass):
     
         self.dynamics = dynamics
         self.dataloader = dataloader
-        self.workdir = workdir
-        self.lr = lr
-        self.seed = seed
-        self.early_stopping = early_stopping 
-        self.warmup_epochs = warmup_epochs
-        self.epochs = epochs
+        self.workdir = config.workdir
+        self.lr = config.lr
+        self.seed = config.seed
+        self.early_stopping = config.early_stopping 
+        self.warmup_epochs = config.warmup_epochs
+        self.epochs = config.epochs
+
         os.makedirs(self.workdir+'/tensorboard', exist_ok=True)
         self.writer = SummaryWriter(self.workdir+'/tensorboard')  # tensorboard writer
 
@@ -47,9 +44,12 @@ class FlowMatchTrainer(nn.Module):
             self.writer.add_scalar('Loss/valid', valid.loss, epoch)
 
             if valid.stop(save_best=self.dynamics.net,
-                          early_stopping=self.early_stopping, 
-                          workdir=self.workdir): 
+                              early_stopping=self.early_stopping, 
+                              workdir=self.workdir): 
                 print("INFO: early stopping triggered! Reached maximum patience at {} epochs".format(epoch))
-                break
-            
+                break          
         self.writer.close() 
+
+    # def load_state(self, path=None):
+    #     path = self.workdir + '/best_model.pth' if path is None else path
+    #     self.dynamics.net.load_state_dict(torch.load(path))

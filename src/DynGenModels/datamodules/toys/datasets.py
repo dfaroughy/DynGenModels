@@ -1,27 +1,28 @@
 import torch
 import numpy as np
 from torch.utils.data import Dataset
+from dataclasses import dataclass
 
 class ToysDataset(Dataset):
 
-    def __init__(self, 
-                 num_samples: int=10000          
-                 ):
+    def __init__(self, config: dataclass):
         
-        self.num_samples = num_samples
+        self.num_samples = config.num_samples
+        self.gaussian_scale = config.gaussian_scale 
+        self.gaussian_var = config.gaussian_var 
+        self.moon_noise = config.moon_noise
 
         ''' datasets:
             source data (x0) :  8 gaussians
             target data (x1) :  2 mooons
         '''
-
-        self.source = self.sample_8_gauss()
         self.target = self.sample_2_moons()
+        self.source = self.sample_8_gauss()
 
     def __getitem__(self, idx):
         output = {}
-        output['source'] = self.source[idx]
         output['target'] = self.target[idx]
+        output['source'] = self.source[idx]
         return output
 
     def __len__(self):
@@ -31,10 +32,10 @@ class ToysDataset(Dataset):
         for i in range(len(self)):
             yield self[i]
 
-    def sample_8_gauss(self,  dim=2, scale=2, var=0.1):
+    def sample_8_gauss(self,  dim=2):
 
         m = torch.distributions.multivariate_normal.MultivariateNormal(
-            torch.zeros(dim), np.sqrt(var) * torch.eye(dim)
+            torch.zeros(dim), np.sqrt(self.gaussian_var) * torch.eye(dim)
             )
 
         centers = [
@@ -48,7 +49,7 @@ class ToysDataset(Dataset):
             (-1.0 / np.sqrt(2), -1.0 / np.sqrt(2)),
             ]
 
-        centers = torch.tensor(centers) * scale
+        centers = torch.tensor(centers, dtype=torch.float32) * self.gaussian_scale
         noise = m.sample((self.num_samples,))
         multi = torch.multinomial(torch.ones(8), self.num_samples, replacement=True)
         data = []
@@ -57,9 +58,9 @@ class ToysDataset(Dataset):
             data.append(centers[multi[i]] + noise[i])
         return torch.stack(data)
 
-    def sample_2_moons(self,  noise=0.2):
+    def sample_2_moons(self):
         from sklearn import datasets
-        data , _ = datasets.make_moons(n_samples=self.num_samples, noise=noise)
-        return torch.tensor(data)
+        data , _ = datasets.make_moons(n_samples=self.num_samples, noise=self.moon_noise)
+        return 3 * torch.tensor(data, dtype=torch.float32) - 1
     
 

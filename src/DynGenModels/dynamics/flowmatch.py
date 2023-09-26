@@ -2,7 +2,7 @@ import torch
 
 class SimplifiedCondFlowMatching:
 
-	def __init__(self, net, sigma_min=1e-6):
+	def __init__(self, net, sigma_min=0.1):
 		self.sigma_min = sigma_min
 		self.net = net
 
@@ -44,10 +44,11 @@ class SimplifiedCondFlowMatching:
 
 		mu_t, sigma_t = self.gaussian_probability_path(t)
 		noise = torch.randn_like(source)
+
 		x_t = mu_t + sigma_t * noise
 		u_t = self.conditional_vector_field(x_t, t)
 		v_t = self.net(x=x_t, t=t)
-		
+
 		loss = torch.square(v_t - u_t)
 
 		return torch.mean(loss)

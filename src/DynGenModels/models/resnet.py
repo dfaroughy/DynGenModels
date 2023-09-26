@@ -68,7 +68,6 @@ class ResNet(nn.Module):
     ''' Wrapper class for the ResNet architecture'''
     def __init__(self, model_config):
         super(ResNet, self).__init__()
-        self.device = model_config.device
         self.resnet = _ResNet(dim=model_config.dim_input, 
                                dim_hidden=model_config.dim_hidden, 
                                num_layers=model_config.num_layers,

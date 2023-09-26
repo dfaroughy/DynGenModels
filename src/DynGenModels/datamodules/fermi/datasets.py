@@ -1,23 +1,23 @@
 import torch
 import numpy as np
 from torch.utils.data import Dataset
+from dataclasses import dataclass
 
 from DynGenModels.datamodules.fermi.dataprocess import PreProcessFermiData
 
 
 class FermiDataset(Dataset):
 
-    def __init__(self, 
-                 dir_path: str=None, 
-                 dataset: str=None,
-                 cuts: dict=None,
-                 preprocess : list=None
+    def __init__(self, config: dataclass,
+                #  dir_path: str=None, 
+                #  dataset: str=None,
+                #  cuts: dict=None,
+                #  preprocess : list=None
                  ):
         
-        self.path = dir_path
-        self.dataset = dataset
-        self.cuts = cuts
-        self.preprocess_methods = preprocess 
+        self.dataset = config.dataset
+        self.cuts = config.cuts
+        self.preprocess_methods = config.preprocess 
         self.summary_stats = None
         
         ''' datasets:
@@ -42,10 +42,10 @@ class FermiDataset(Dataset):
             yield self[i]
 
     def get_fermi_data(self):
-        data_raw = torch.tensor(np.load(self.path+'/'+self.dataset), dtype=torch.float32)
+        data_raw = torch.tensor(np.load(self.dataset), dtype=torch.float32)
         data = PreProcessFermiData(data_raw, cuts=self.cuts, methods=self.preprocess_methods)
         data.preprocess()
         self.summary_stats = data.summary_stats
         print("INFO: loading and preprocessing data...")
-        print('\t- dataset: {} \n \t- shape: {}'.format(self.path, data.galactic_features.shape))
+        print('\t- dataset: {} \n \t- shape: {}'.format(self.dataset, data.galactic_features.shape))
         return data.galactic_features
