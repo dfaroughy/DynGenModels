@@ -1,9 +1,10 @@
 import torch 
+from dataclasses import dataclass
 
 class SimplifiedCondFlowMatching:
 
-	def __init__(self, net, sigma_min=0.1):
-		self.sigma_min = sigma_min
+	def __init__(self, net, config: dataclass):
+		self.sigma_min = config.sigma
 		self.net = net
 
 	def z(self, x0, x1):

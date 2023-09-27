@@ -15,12 +15,12 @@ class PreProcessFermiData:
         self.methods = methods
         self.summary_stats = {}
 
-    def preprocess(self):
-        #...apply data selection cuts
+    def apply_cuts(self):
         self.selection_cuts(feature='energy', cut=self.cuts['energy'])
         self.selection_cuts(feature='theta', cut=self.cuts['theta'])
         self.selection_cuts(feature='phi', cut=self.cuts['phi'])
-        
+
+    def preprocess(self):        
         #...preprocess with provided methods
         for method in self.methods:
             method = getattr(self, method, None)

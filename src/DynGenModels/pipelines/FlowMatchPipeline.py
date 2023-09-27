@@ -13,6 +13,10 @@ class FlowMatchPipeline:
                  source_input: torch.Tensor=None,
                  postprocessor: object=None,
                  config: dataclass=None,
+                 solver: str=None,
+                 sensitivity: str=None,
+                 atol: float=None ,
+                 rtol: float=None
                  ):
         
         self.model = trained_model
@@ -20,10 +24,10 @@ class FlowMatchPipeline:
         self.postprocessor = postprocessor
         self.net = self.model.dynamics.net
         self.time = torch.linspace(0, self.model.dynamics.T, config.num_sampling_steps)
-        self.solver = config.solver
-        self.sensitivity = config.sensitivity
-        self.atol = config.atol
-        self.rtol = config.rtol
+        self.solver = config.solver if solver is None else solver
+        self.sensitivity = config.sensitivity if sensitivity is None else sensitivity
+        self.atol = config.atol if atol is None else atol
+        self.rtol = config.rtol if rtol is None else rtol
         self.trajectories = self.ODEsolver()
 
         if self.postprocessor is not None:
@@ -32,6 +36,7 @@ class FlowMatchPipeline:
             print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))
 
         self.target = self.postprocess(self.trajectories[-1]) if postprocessor is not None else self.trajectories[-1]
+        self.source = self.postprocess(self.trajectories[0]) if postprocessor is not None else self.trajectories[0]
 
     @torch.no_grad()
     def ODEsolver(self):

@@ -20,17 +20,20 @@ class FlowMatchTrainer(nn.Module):
         self.dataloader = dataloader
         self.workdir = config.workdir
         self.lr = config.lr
-        self.seed = config.seed
+        self.epochs = config.epochs
         self.early_stopping = config.early_stopping 
         self.warmup_epochs = config.warmup_epochs
-        self.epochs = config.epochs
+        self.print_epochs = config.print_epochs
+        self.seed = config.seed
 
         os.makedirs(self.workdir+'/tensorboard', exist_ok=True)
         self.writer = SummaryWriter(self.workdir+'/tensorboard')  # tensorboard writer
 
     def train(self):
         train = Train_Step(loss_fn=self.dynamics.loss)
-        valid = Validation_Step(loss_fn=self.dynamics.loss, warmup_epochs=self.warmup_epochs)
+        valid = Validation_Step(loss_fn=self.dynamics.loss, 
+                                warmup_epochs=self.warmup_epochs, 
+                                print_epochs=self.print_epochs)
         optimizer = torch.optim.Adam(self.dynamics.net.parameters(), lr=self.lr)  
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, self.epochs)
 

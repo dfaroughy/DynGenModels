@@ -28,7 +28,7 @@ class Train_Step(nn.Module):
 
 class Validation_Step(nn.Module):
 
-    def __init__(self, loss_fn, warmup_epochs=10):
+    def __init__(self, loss_fn, warmup_epochs=10, print_epochs=5):
         super(Validation_Step, self).__init__()
         self.loss_fn = loss_fn
         self.loss = 0
@@ -36,8 +36,7 @@ class Validation_Step(nn.Module):
         self.patience = 0
         self.loss_min = np.inf
         self.terminate_loop = False
-        self.data_size = 0
-        self.print_epoch = 5
+        self.print_epoch = print_epochs
         self.warmup_epochs = warmup_epochs
         self.losses = []
         

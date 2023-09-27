@@ -8,7 +8,7 @@ from datetime import datetime
 from DynGenModels.utils.utils import make_dir, print_table
 
 @dataclass
-class DataConfig:
+class _DataConfig:
     dataset : str = None
     data_name : str = 'fermi_galactic_center'
     features   : List[str] = field(default_factory = lambda : ['theta', 'phi', 'energy'])
@@ -17,28 +17,33 @@ class DataConfig:
                                                               'phi': [-np.inf, np.inf], 
                                                               'energy': [0.0, np.inf]} )
 @dataclass
-class TrainConfig:
+class _TrainConfig:
     device : str = 'cpu'
     data_split_fracs : List[float] = field(default_factory = lambda : [0.7, 0.3, 0.0])  # train / val / test 
     batch_size : int = 1024
     epochs : int = 1000  
     early_stopping : int = 30 
     warmup_epochs : int = 100    
+    print_epochs : int = 10
     lr : float = 0.001
     seed : int = 12345
 
 @dataclass
-class SamplingConfig:
+class _SamplingConfig:
     solver : str = 'euler'
     num_sampling_steps : int = 100
     sensitivity : str = 'adjoint'
     atol : float = 1e-4
     rtol : float = 1e-4
 
+@dataclass
+class _DynamicsConfig:
+    sigma : float = 0.1
+
 #...Neural Network configarations:
 
 @dataclass
-class FermiResNetConfig(SamplingConfig, TrainConfig, DataConfig):
+class FermiResNetConfig(_DynamicsConfig, _SamplingConfig, _TrainConfig, _DataConfig):
 
     model_name : str = 'ResNet'
     dim_input  : int = 3 
@@ -69,7 +74,7 @@ class FermiResNetConfig(SamplingConfig, TrainConfig, DataConfig):
 
 
 @dataclass
-class FermiMLPConfig(SamplingConfig, TrainConfig, DataConfig):
+class FermiMLPConfig(_DynamicsConfig, _SamplingConfig, _TrainConfig, _DataConfig):
 
     model_name : str = 'MLP'
     dim_input  : int = 3 

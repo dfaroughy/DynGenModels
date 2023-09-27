@@ -5,7 +5,6 @@ import itertools
 import torch
 from tabulate import tabulate
 
-
 def make_dir(path, overwrite=False, sub_dirs=False, verbose=True):  
     Directory = path
     if overwrite:
@@ -29,6 +28,7 @@ def make_dir(path, overwrite=False, sub_dirs=False, verbose=True):
         print("#"+"="*len(info))
     return Directory
 
+
 def print_table(data):
     table = []
     for key, value in data.items():
@@ -37,6 +37,7 @@ def print_table(data):
         table.append([key, value])
     print(tabulate(table, headers=["Key", "Value"], tablefmt="pretty", colalign=("left", "left")))
 
+
 def save_data(samples: dict, name: str, workdir : str, verbose: bool = True):
     for key in samples.keys():
         sample = samples[key].numpy()
@@ -44,6 +45,7 @@ def save_data(samples: dict, name: str, workdir : str, verbose: bool = True):
         np.save(path, sample)
     if verbose:
         print("INFO: saved {} data in {}".format(name, workdir))
+
 
 def savefig(filename, extension="png"):
     counter = 1
@@ -55,3 +57,4 @@ def savefig(filename, extension="png"):
         unique_filename = f"{base_filename}_{counter}{ext}"
         counter += 1
     return unique_filename        
+

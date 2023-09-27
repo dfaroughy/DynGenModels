@@ -1,44 +1,48 @@
 
 import numpy as np
 import json
-from dataclasses import dataclass, field, asdict
 from typing import List, Dict
 from datetime import datetime
-
+from dataclasses import dataclass, field, asdict
 from DynGenModels.utils.utils import make_dir, print_table
 
 @dataclass
-class DataConfig:
+class _DataConfig:
     data_name : str = 'toys'
-    num_samples : int = 10000
-    gaussian_scale : float = 2
-    gaussian_var : float = 0.1
-    moon_noise : float = 0.2
     features   : List[str] = field(default_factory = lambda : ['x', 'y'])
+    num_samples : int = 10000
+    gauss_8_scale : float = 2
+    gauss_8_var : float = 0.1
+    moon_2_noise : float = 0.2
 
 @dataclass
-class TrainConfig:
+class _TrainConfig:
     device : str = 'cpu'
     data_split_fracs : List[float] = field(default_factory = lambda : [0.7, 0.3, 0.0])  # train / val / test 
     batch_size : int = 1024
     epochs : int = 1000  
     early_stopping : int = 30 
-    warmup_epochs : int = 100    
+    warmup_epochs : int = 100 
+    print_epochs : int = 10   
     lr : float = 0.001
     seed : int = 12345
 
 @dataclass
-class SamplingConfig:
+class _SamplingConfig:
     solver : str = 'euler'
     num_sampling_steps : int = 100
     sensitivity : str = 'adjoint'
     atol : float = 1e-4
     rtol : float = 1e-4
 
+@dataclass
+class _DynamicsConfig:
+    sigma : float = 0.1
+
 #...Neural Network configarations:
 
 @dataclass
-class ToysMLPConfig(SamplingConfig, TrainConfig, DataConfig):
+class ToysMLPConfig(_DynamicsConfig, _SamplingConfig, _TrainConfig, _DataConfig):
 
     model_name : str = 'MLP'
     dim_input  : int = 3 
