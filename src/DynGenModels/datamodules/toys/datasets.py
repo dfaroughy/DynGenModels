@@ -3,7 +3,7 @@ import numpy as np
 from torch.utils.data import Dataset
 from dataclasses import dataclass
 
-class ToysDataset(Dataset):
+class Gauss2MoonsDataset(Dataset):
 
     def __init__(self, config: dataclass):
         
@@ -63,3 +63,63 @@ class ToysDataset(Dataset):
                 data.append(centers[multi[i]] + noise[i])
             return torch.stack(data)
 
+class SmearedGaussDataset(torch.utils.data.Dataset):
+    def __init__(self, config: dataclass):
+        
+        self.num_samples = config.num_samples
+        self.noise_cov = torch.Tensor(config.noise_cov)
+
+        ''' datasets:
+            source data (x0) :  3 perpendicular smeared gaussians
+            target data (x1) :  1 gaussian with smeareing covariance 
+        '''
+        self.truth = self.get_truth_data()
+        self.source = self.get_source_data(self.truth)
+        self.covs = self.get_cov_data()
+
+    def __getitem__(self, idx):
+        output = {}
+        output['source'] = self.source[idx]
+        output['covariance'] = self.covs[idx]
+        return output
+
+    def __len__(self):
+        return self.source.size(0)
+    
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def get_source_data(self, truth_data):
+        noise_dist = torch.distributions.multivariate_normal.MultivariateNormal(torch.zeros(2), self.noise_cov)
+        noise = noise_dist.sample((truth_data.shape[0],))
+        noisy_data = truth_data + noise
+        return noisy_data
+
+    def get_cov_data(self):
+        cov = self.noise_cov.unsqueeze(0).repeat(self.num_samples, 1, 1)
+        return cov
+
+    def get_truth_data(self, dim=2):
+            data_means = torch.Tensor([
+                [-2.0, 0.0],
+                [0.0, -2.0],
+                [0.0, 2.0]
+            ])
+
+            data_covars = torch.Tensor([
+                [[0.3**2, 0],[0, 1]],
+                [[1, 0],[0, 0.3**2]],
+                [[1, 0],[0, 0.3**2]]])
+
+            distributions = [torch.distributions.multivariate_normal.MultivariateNormal(mean, covar) for mean, covar in zip(data_means, data_covars)]
+            
+            multi = torch.multinomial(torch.ones(len(distributions)), self.num_samples, replacement=True)
+            data = []
+
+            for i in range(self.num_samples):
+                selected_distribution = distributions[multi[i]]
+                sample = selected_distribution.sample()
+                data.append(sample)
+
+            return torch.stack(data)
