@@ -23,7 +23,7 @@ class FlowMatchPipeline:
         self.source = source_input
         self.postprocessor = postprocessor
         self.net = self.model.dynamics.net
-        self.time = torch.linspace(0, self.model.dynamics.T, config.num_sampling_steps)
+        self.time = torch.linspace(self.model.dynamics.t0, self.model.dynamics.t1, config.num_sampling_steps)
         self.solver = config.solver if solver is None else solver
         self.sensitivity = config.sensitivity if sensitivity is None else sensitivity
         self.atol = config.atol if atol is None else atol
