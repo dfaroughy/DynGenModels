@@ -9,22 +9,22 @@ from dataclasses import dataclass
 
 from DynGenModels.trainer.utils import Train_Step, Validation_Step
 
-class FlowMatchTrainer(nn.Module):
+class DynGenModelTrainer(nn.Module):
 
     def __init__(self, 
                  dynamics,
                  dataloader: DataLoader,
-                 config: dataclass):
+                 configs: dataclass):
     
         self.dynamics = dynamics
         self.dataloader = dataloader
-        self.workdir = config.workdir
-        self.lr = config.lr
-        self.epochs = config.epochs
-        self.early_stopping = config.early_stopping 
-        self.warmup_epochs = config.warmup_epochs
-        self.print_epochs = config.print_epochs
-        self.seed = config.seed
+        self.workdir = configs.workdir
+        self.lr = configs.lr
+        self.epochs = configs.epochs
+        self.early_stopping = configs.early_stopping 
+        self.warmup_epochs = configs.warmup_epochs
+        self.print_epochs = configs.print_epochs
+        self.seed = configs.seed
 
         os.makedirs(self.workdir+'/tensorboard', exist_ok=True)
         self.writer = SummaryWriter(self.workdir+'/tensorboard')  # tensorboard writer

@@ -3,31 +3,33 @@ from torchdyn.core import NeuralODE
 from tqdm.auto import tqdm
 from dataclasses import dataclass
 
-from DynGenModels.trainer.trainer import FlowMatchTrainer
+from DynGenModels.trainer.trainer import DynGenModelTrainer
 from DynGenModels.pipelines.utils import TorchdynWrapper
 
 class FlowMatchPipeline:
     
     def __init__(self, 
-                 trained_model: FlowMatchTrainer=None, 
+                 trained_model: DynGenModelTrainer=None, 
                  source_input: torch.Tensor=None,
                  postprocessor: object=None,
-                 config: dataclass=None,
+                 configs: dataclass=None,
                  solver: str=None,
+                 num_sampling_steps: int=None,
                  sensitivity: str=None,
-                 atol: float=None ,
-                 rtol: float=None
+                 atol: float=None,
+                 rtol: float=None,
                  ):
         
         self.model = trained_model
         self.source = source_input
         self.postprocessor = postprocessor
         self.net = self.model.dynamics.net
-        self.time = torch.linspace(self.model.dynamics.t0, self.model.dynamics.t1, config.num_sampling_steps)
-        self.solver = config.solver if solver is None else solver
-        self.sensitivity = config.sensitivity if sensitivity is None else sensitivity
-        self.atol = config.atol if atol is None else atol
-        self.rtol = config.rtol if rtol is None else rtol
+        self.time = torch.linspace(configs.t0, configs.t1, configs.num_sampling_steps)
+        self.solver = configs.solver if solver is None else solver
+        self.num_sampling_steps = configs.num_sampling_steps if num_sampling_steps is None else num_sampling_steps
+        self.sensitivity = configs.sensitivity if sensitivity is None else sensitivity
+        self.atol = configs.atol if atol is None else atol
+        self.rtol = configs.rtol if rtol is None else rtol
         self.trajectories = self.ODEsolver()
 
         if self.postprocessor is not None:
@@ -58,5 +60,37 @@ class FlowMatchPipeline:
 
     def postprocess(self, trajectories):
         sample = self.postprocessor(data=trajectories, summary_stats=self.stats, methods=self.postprocess_methods)
+        sample.postprocess()
+        return sample.galactic_features
+
+
+class NormFlowPipeline:
+    
+    def __init__(self,
+                 trained_model: DynGenModelTrainer=None, 
+                 postprocessor: object=None,
+                 configs: dataclass=None,
+                 num_gen_samples: int=None
+                 ):
+        
+        self.model = trained_model
+        self.num_gen_samples = configs.num_gen_samples if num_gen_samples is None else num_gen_samples
+        self.postprocessor = postprocessor
+        self.net = self.model.dynamics.net
+        self.samples = self.sampler()
+        
+        if self.postprocessor is not None:
+            self.stats = self.model.dataloader.datasets.summary_stats if postprocessor is not None else None
+            self.postprocess_methods = ['inverse_' + method for method in self.model.dataloader.datasets.preprocess_methods[::-1]]
+            print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))
+
+        self.target = self.postprocess(self.samples) if postprocessor is not None else self.samples
+
+    @torch.no_grad()
+    def sampler(self):
+        return self.model.dynamics.flow.sample(self.num_gen_samples).detach()
+
+    def postprocess(self, samples):
+        sample = self.postprocessor(data=samples, summary_stats=self.stats, methods=self.postprocess_methods)
         sample.postprocess()
         return sample.galactic_features

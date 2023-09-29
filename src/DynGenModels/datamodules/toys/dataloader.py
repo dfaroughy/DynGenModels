@@ -7,11 +7,11 @@ from dataclasses import dataclass
 
 class ToysDataLoader:
 
-    def __init__(self, datasets: Dataset, config: dataclass):
+    def __init__(self, datasets: Dataset, configs: dataclass):
 
         self.datasets = datasets        
-        self.data_split_fracs = config.data_split_fracs
-        self.batch_size = config.batch_size
+        self.data_split_fracs = configs.data_split_fracs
+        self.batch_size = configs.batch_size
         self.dataloader()
 
     def train_val_test_split(self, dataset, train_frac, valid_frac, shuffle=False):

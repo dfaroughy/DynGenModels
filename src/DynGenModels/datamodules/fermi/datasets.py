@@ -7,11 +7,11 @@ from DynGenModels.datamodules.fermi.dataprocess import PreProcessFermiData
 
 class FermiDataset(Dataset):
 
-    def __init__(self, config: dataclass):
+    def __init__(self, configs: dataclass):
         
-        self.dataset = config.dataset
-        self.cuts = config.cuts
-        self.preprocess_methods = config.preprocess 
+        self.dataset = configs.dataset
+        self.cuts = configs.cuts
+        self.preprocess_methods = configs.preprocess 
         self.summary_stats = None
         
         ''' datasets:

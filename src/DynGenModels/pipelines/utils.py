@@ -2,7 +2,7 @@ import torch
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import seaborn as sns
-from DynGenModels.trainer.trainer import FlowMatchTrainer
+from DynGenModels.trainer.trainer import DynGenModelTrainer
 
 class RunFlowPipeline:
     def __init__(self,
@@ -25,9 +25,9 @@ class RunFlowPipeline:
         self.dataset = dataset(configs) 
         self.dataloader = dataloader(self.dataset, configs)
 
-        self.model = FlowMatchTrainer(dynamics=dynamics(self.net, configs), 
-                                      dataloader=self.dataloader, 
-                                      config=configs)
+        self.model = DynGenModelTrainer(dynamics=dynamics(self.net, configs), 
+                                        dataloader=self.dataloader, 
+                                        config=configs)
         self.model.train()
         self.pipeline = pipeline(trained_model=self.model, 
                                 postprocessor=self.postprocessor, 
@@ -37,6 +37,7 @@ class RunFlowPipeline:
         self.target = self.pipeline.target
         self.source = self.pipeline.source
         self.trajectories = self.pipeline.trajectories
+
 
 class TorchdynWrapper(torch.nn.Module):
     """ Wraps model to torchdyn compatible format.
