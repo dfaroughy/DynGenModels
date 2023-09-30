@@ -5,7 +5,7 @@ import itertools
 import torch
 from tabulate import tabulate
 
-def make_dir(path, overwrite=False, sub_dirs=False, verbose=True):  
+def make_dir(path, overwrite=False, sub_dirs=None, verbose=True):  
     Directory = path
     if overwrite:
         shutil.rmtree(Directory, ignore_errors=True)
@@ -35,7 +35,7 @@ def print_table(data):
         if isinstance(value, dict):
             value = "\n".join([f"{k}: {v}" for k, v in value.items()])
         table.append([key, value])
-    print(tabulate(table, headers=["Key", "Value"], tablefmt="pretty", colalign=("left", "left")))
+    print(tabulate(table, headers=["Parameters", "Values"], tablefmt="pretty", colalign=("left", "left")))
 
 
 def save_data(samples: dict, name: str, workdir : str, verbose: bool = True):

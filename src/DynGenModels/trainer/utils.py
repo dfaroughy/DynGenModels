@@ -22,8 +22,7 @@ class Train_Step(nn.Module):
             loss_current.backward()
             optimizer.step()  
             self.loss += loss_current.detach().cpu().numpy()
-
-        self.loss = self.loss / len(dataloader.dataset)
+        #self.loss = self.loss / len(dataloader.dataset)
         self.losses.append(self.loss) 
 
 class Validation_Step(nn.Module):
@@ -35,7 +34,6 @@ class Validation_Step(nn.Module):
         self.epoch = 0
         self.patience = 0
         self.loss_min = np.inf
-        self.terminate_loop = False
         self.print_epoch = print_epochs
         self.warmup_epochs = warmup_epochs
         self.losses = []
@@ -48,24 +46,27 @@ class Validation_Step(nn.Module):
         for batch in dataloader:
             loss_current = self.loss_fn(batch)
             self.loss += loss_current.detach().cpu().numpy()
-
-        self.loss = self.loss / len(dataloader.dataset)
+        # self.loss = self.loss / len(dataloader.dataset)
         self.losses.append(self.loss) 
 
     @torch.no_grad()
-    def stop(self, save_best, early_stopping, workdir):
-        if early_stopping is not None:
-            if self.loss < self.loss_min:
-                self.loss_min = self.loss
-                self.patience = 0
-                torch.save(save_best.state_dict(), workdir + '/best_model.pth')  
-            else: self.patience += 1 if self.epoch > self.warmup_epochs else 0
-            if self.patience >= early_stopping: 
-                self.terminate_loop = True
-                torch.save(save_best.state_dict(), workdir + '/last_epoch_model.pth')
-        else:
-            torch.save(save_best.state_dict(), workdir + '/last_epoch_model.pth')
+    def checkpoint(self, early_stopping=None):
+        terminate = False
+        improved = False
+        
+        # if early_stopping is not None:     
+        if self.loss < self.loss_min:
+            self.loss_min = self.loss
+            self.patience = 0
+            improved = True 
+
+        else: self.patience += 1 if self.epoch > self.warmup_epochs else 0
+
+        if self.patience >= early_stopping: 
+            terminate = True
+
         if self.epoch % self.print_epoch == 1:
             print("\t test loss: {}  (min loss: {})".format(self.loss, self.loss_min))
-        return self.terminate_loop
+
+        return terminate, improved
 

@@ -8,12 +8,14 @@ class Gauss2MoonsDataset(Dataset):
     def __init__(self, configs: dataclass):
         
         self.num_points = configs.num_points
-        self.gauss_8_scale = configs.gauss_8_scale
-        self.gauss_8_var = configs.gauss_8_var 
+        self.N = configs.num_gaussians
+        self.gauss_N_scale = configs.gauss_N_scale
+        self.gauss_N_var = configs.gauss_N_var 
+        self.gauss_centers = configs.gauss_centers
         self.moon_2_noise = configs.moon_2_noise
 
         ''' datasets:
-            source data (x0) :  8 gaussians
+            source data (x0) :  N gaussians on unit circle
             target data (x1) :  2 mooons
         '''
         self.target = self.get_target_data()
@@ -33,30 +35,19 @@ class Gauss2MoonsDataset(Dataset):
             yield self[i]
 
     def get_target_data(self):
-        from sklearn import datasets
-        data , _ = datasets.make_moons(n_samples=self.num_points, noise=self.moon_2_noise)
-        return 3 * torch.tensor(data, dtype=torch.float32) - 1
+        from torchdyn.datasets import generate_moons
+        x0, _ = generate_moons(self.num_points, self.moon_2_noise)
+        return x0 * 3 - 1
 
     def get_source_data(self,  dim=2):
 
             m = torch.distributions.multivariate_normal.MultivariateNormal(
-                torch.zeros(dim), np.sqrt(self.gauss_8_var) * torch.eye(dim)
+                torch.zeros(dim), np.sqrt(self.gauss_N_var) * torch.eye(dim)
                 )
 
-            centers = [
-                (1, 0),
-                (-1, 0),
-                (0, 1),
-                (0, -1),
-                (1.0 / np.sqrt(2), 1.0 / np.sqrt(2)),
-                (1.0 / np.sqrt(2), -1.0 / np.sqrt(2)),
-                (-1.0 / np.sqrt(2), 1.0 / np.sqrt(2)),
-                (-1.0 / np.sqrt(2), -1.0 / np.sqrt(2)),
-                ]
-
-            centers = torch.tensor(centers, dtype=torch.float32) * self.gauss_8_scale
+            centers = torch.tensor(self.gauss_centers, dtype=torch.float32) * self.gauss_N_scale
             noise = m.sample((self.num_points,))
-            multi = torch.multinomial(torch.ones(8), self.num_points, replacement=True)
+            multi = torch.multinomial(torch.ones(self.N), self.num_points, replacement=True)
             data = []
 
             for i in range(self.num_points):

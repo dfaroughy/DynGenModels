@@ -7,7 +7,7 @@ class MLP_Configs(Training_Configs):
     dim_hidden : int = 128   
 
 @dataclass
-class Resnet_Configs(Training_Configs):
+class ResNet_Configs(Training_Configs):
     model_name : str = 'ResNet'
     dim_hidden : int = 128 
     num_layers : int = 3

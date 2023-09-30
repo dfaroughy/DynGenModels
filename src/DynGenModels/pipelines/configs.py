@@ -2,8 +2,6 @@ from dataclasses import dataclass
 
 @dataclass
 class NeuralODE_Sampler_Configs:
-    """ ODE solver params for flow-matching based on torchdyn
-    """
     solver : str = 'euler'
     num_sampling_steps : int = 100
     sensitivity : str = 'adjoint'
@@ -12,6 +10,4 @@ class NeuralODE_Sampler_Configs:
 
 @dataclass
 class NormFlows_Sampler_Configs:
-    """ Normalizing flow params for sampling base don nflows
-    """
     num_gen_samples: int = 1000     

@@ -18,18 +18,24 @@ class FlowMatchPipeline:
                  sensitivity: str=None,
                  atol: float=None,
                  rtol: float=None,
+                 reverse_time_flow: bool=False,
+                 best_epoch_model: bool=False
                  ):
         
         self.model = trained_model
         self.source = source_input
         self.postprocessor = postprocessor
-        self.net = self.model.dynamics.net
-        self.time = torch.linspace(configs.t0, configs.t1, configs.num_sampling_steps)
+        self.net = self.model.best_epoch_model if best_epoch_model else self.model.last_epoch_model
+
+        self.t0 = configs.t1 if reverse_time_flow else configs.t0
+        self.t1 = configs.t0 if reverse_time_flow else configs.t1
         self.solver = configs.solver if solver is None else solver
         self.num_sampling_steps = configs.num_sampling_steps if num_sampling_steps is None else num_sampling_steps
         self.sensitivity = configs.sensitivity if sensitivity is None else sensitivity
         self.atol = configs.atol if atol is None else atol
         self.rtol = configs.rtol if rtol is None else rtol
+
+        self.time_steps = torch.linspace(self.t0, self.t1, self.num_sampling_steps)
         self.trajectories = self.ODEsolver()
 
         if self.postprocessor is not None:
@@ -42,6 +48,8 @@ class FlowMatchPipeline:
 
     @torch.no_grad()
     def ODEsolver(self):
+        print('INFO: neural ODE solver with {} method and steps={}'.format(self.solver, self.num_sampling_steps))
+
         node = NeuralODE(vector_field=TorchdynWrapper(self.net), 
                         solver=self.solver, 
                         sensitivity=self.sensitivity, 
@@ -50,12 +58,13 @@ class FlowMatchPipeline:
                         rtol=self.rtol if self.solver=='dopri5' else None
                         )
         if self.source is None:
+            assert self.model.dataloader.test is not None, "No test dataset available! provide source input!"
             trajectories = []
             for batch in tqdm(self.model.dataloader.test, desc="sampling"):
-                trajectories.append(node.trajectory(x=batch['source'], t_span=self.time))
+                trajectories.append(node.trajectory(x=batch['source'], t_span=self.time_steps))
             trajectories = torch.cat(trajectories, dim=1)
         else:
-            trajectories = node.trajectory(x=self.source, t_span=self.time)
+            trajectories = node.trajectory(x=self.source, t_span=self.time_steps)
         return trajectories
 
     def postprocess(self, trajectories):
