@@ -24,23 +24,3 @@ Gauss_2_Moons_MAF_RQS_NormFlow = Configs(data = Gauss_2_Moons_Configs,
                                          model = MAF_RQS_Configs, 
                                          dynamics = Deconvolution_NormFlow_Configs, 
                                          pipeline = NormFlows_Sampler_Configs)
-
-
-#...Deconvolution Model Configs:
-
-Deconv_Gauss_MLP_FlowMatch = Configs(data = Gauss_Deconv_Configs,
-                                     model = MLP_Configs, 
-                                     dynamics = FlowMatch_Configs, 
-                                     pipeline = NeuralODE_Sampler_Configs)
-
-
-Deconv_Gauss_MAF_Affine_NormFlow = Configs(data = Gauss_Deconv_Configs,
-                                           model = MAF_Affine_Configs, 
-                                           dynamics = Deconvolution_NormFlow_Configs, 
-                                           pipeline = NormFlows_Sampler_Configs)
-
-
-Deconv_Gauss_MAF_RQS_NormFlow = Configs(data = Gauss_Deconv_Configs,
-                                        model = MAF_RQS_Configs, 
-                                        dynamics = Deconvolution_NormFlow_Configs, 
-                                        pipeline = NormFlows_Sampler_Configs)

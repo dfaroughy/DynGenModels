@@ -7,13 +7,14 @@ class PreProcessGaussData:
     def __init__(self, 
                  data, 
                  cuts: dict=None,
-                 methods: list=['standardize']
+                 methods: list=None,
+                 summary_stats: dict={}
                  ):
         
         self.features = data
         self.cuts = cuts if cuts is not None else {'x': None, 'y': None}
-        self.methods = methods
-        self.summary_stats = {}
+        self.methods = methods 
+        self.summary_stats = summary_stats
 
     def apply_cuts(self):
         self.selection_cuts(feature='x', cut=self.cuts['x'])
@@ -52,7 +53,12 @@ class PreProcessGaussData:
         self.features = self.features * (1 - 2 * alpha) + alpha
         self.features = torch.log(self.features / (1 - self.features))
 
-
+    def compute_summary_stats(self):
+        self.summary_stats['mean'] = torch.mean(self.features, dim=0)
+        self.summary_stats['std'] = torch.std(self.features, dim=0)
+        self.summary_stats['min'], _ = torch.min(self.features, dim=0)
+        self.summary_stats['max'], _ = torch.max(self.features, dim=0)
+        return self.summary_stats
 
 class PostProcessGaussData:
 

@@ -1,6 +1,6 @@
 import numpy as np
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from typing import List, Dict, Tuple
 
 @dataclass
 class DataConfigs:
@@ -26,9 +26,10 @@ class Gauss_2_Moons_Configs(DataConfigs):
                                                                         (1.0 / np.sqrt(2), -1.0 / np.sqrt(2)),
                                                                         (-1.0 / np.sqrt(2), 1.0 / np.sqrt(2)),
                                                                         (-1.0 / np.sqrt(2), -1.0 / np.sqrt(2))])
-
 @dataclass
-class Gauss_Deconv_Configs(DataConfigs):
+class Smeared_Gauss_Configs(DataConfigs):
     data_name : str = 'gaussian_deconvolution'
     noise_cov : List[List[float]] = field(default_factory = lambda : [[0.1, 0.0],[0.0, 1.0]])
-
+    preprocess : List[str] = field(default_factory = lambda : [])
+    cuts : Dict[str, List[float]] = field(default_factory = lambda: {'x': [-np.inf, np.inf], 'y': [-np.inf, np.inf]} )
+    

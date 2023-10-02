@@ -70,7 +70,7 @@ class FlowMatchPipeline:
     def postprocess(self, trajectories):
         sample = self.postprocessor(data=trajectories, summary_stats=self.stats, methods=self.postprocess_methods)
         sample.postprocess()
-        return sample.galactic_features
+        return sample.features
 
 
 class NormFlowPipeline:
@@ -102,4 +102,4 @@ class NormFlowPipeline:
     def postprocess(self, samples):
         sample = self.postprocessor(data=samples, summary_stats=self.stats, methods=self.postprocess_methods)
         sample.postprocess()
-        return sample.galactic_features
+        return sample.features
