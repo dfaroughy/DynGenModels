@@ -3,9 +3,9 @@ import numpy as np
 from torch.utils.data import Dataset
 from dataclasses import dataclass
 
-from DynGenModels.datamodules.fermi.dataprocess import PreProcessFermiData
+from DynGenModels.datamodules.gaia.dataprocess import PreProcessGaiaData
 
-class FermiDataset(Dataset):
+class GaiaDataset(Dataset):
 
     def __init__(self, configs: dataclass):
         
@@ -36,7 +36,7 @@ class FermiDataset(Dataset):
             yield self[i]
 
     def get_target_data(self):
-        target = torch.tensor(np.load(self.dataset), dtype=torch.float32)
+        target = torch.tensor(np.load(self.dataset), dtype=torch.float32)        
         target = PreProcessFermiData(target, cuts=self.cuts, methods=self.preprocess_methods)
         target.apply_cuts()
         self.target = target.features
@@ -45,6 +45,12 @@ class FermiDataset(Dataset):
         print("INFO: loading and preprocessing data...")
         print('\t- target dataset: {} \n \t- target shape: {}'.format(self.dataset, target.features.shape))
         return target.features
+
+    def get_covariance_data(self):
+        covariance = torch.tensor(np.load(self.dataset), dtype=torch.float32)
+
+
+
 
     def get_source_data(self):
         self.source = torch.randn_like(self.target, dtype=torch.float32)
