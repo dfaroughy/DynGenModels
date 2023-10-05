@@ -5,12 +5,14 @@ from DynGenModels.trainer.configs import Training_Configs
 class MLP_Configs(Training_Configs):
     model_name : str = 'MLP'
     dim_hidden : int = 128   
+    num_layers : int = 3
 
 @dataclass
 class ResNet_Configs(Training_Configs):
     model_name : str = 'ResNet'
     dim_hidden : int = 128 
-    num_layers : int = 3
+    num_blocks : int = 3
+    num_block_layers : int = 2
 
 @dataclass
 class MAF_Affine_Configs(Training_Configs):

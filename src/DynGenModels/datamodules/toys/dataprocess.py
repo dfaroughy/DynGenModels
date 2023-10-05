@@ -53,7 +53,6 @@ class PreProcessGaussData:
         self.features = torch.log(self.features / (1 - self.features))
 
 
-
 class PostProcessGaussData:
 
     def __init__(self, 

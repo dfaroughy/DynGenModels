@@ -3,25 +3,23 @@ from torch import nn
 from torch.nn import functional as F
 import numpy as np
 
-class _MLP(torch.nn.Module):
-    def __init__(self, dim, out_dim=None, w=64, time_varying=False, device='cpu'):
-        super().__init__()
+#...Multi-Layer Perceptron architecture:
 
+class _MLP(torch.nn.Module):
+    def __init__(self, dim, out_dim=None, w=64, time_varying=False, num_layers=3, device='cpu'):
+        super().__init__()
+        
         self.time_varying = time_varying
         if out_dim is None: out_dim = dim
-
-        self.net = torch.nn.Sequential(
-            torch.nn.Linear(dim + (1 if time_varying else 0), w),
-            torch.nn.SELU(),
-            torch.nn.Linear(w, w),
-            torch.nn.SELU(),
-            torch.nn.Linear(w, w),
-            torch.nn.SELU(),
-            torch.nn.Linear(w, out_dim)).to(device)
-
+        
+        layers = [torch.nn.Linear(dim + (1 if time_varying else 0), w), torch.nn.SELU()]
+        for _ in range(num_layers-1): layers.extend([torch.nn.Linear(w, w), torch.nn.SELU()])
+        layers.append(torch.nn.Linear(w, out_dim))
+        self.net = torch.nn.Sequential(*layers)
+        self.to(device)
     def forward(self, x):
         return self.net(x)
-
+    
 class MLP(nn.Module):
     ''' Wrapper class for the MLP architecture
     '''
@@ -31,6 +29,7 @@ class MLP(nn.Module):
         self.mlp = _MLP(dim=config.dim_input, 
                        out_dim=None,
                        w=config.dim_hidden, 
+                       num_layers=config.num_layers,
                        time_varying=True,
                        device=config.device)
                 
@@ -38,77 +37,58 @@ class MLP(nn.Module):
         x = torch.cat([x, t], dim=-1)
         return self.mlp.forward(x)
     
-class FourierFeatures(nn.Module):
+#...ResNet architecture:
 
-    def __init__(self, dim, scale=30.0):
-        super().__init__()
-        half_dim = dim // 2
-        self.W = nn.Parameter(torch.randn(half_dim) * scale, requires_grad=False)
+class ResidualBlock(torch.nn.Module):
+    def __init__(self, dim, num_layers_per_block=2):
+        super(ResidualBlock, self).__init__()
 
-    def forward(self, z):
-        z_proj = z * self.W.to(z.device) * 2 * np.pi
-        return torch.cat([torch.sin(z_proj), torch.cos(z_proj)], dim=-1)
+        layers = []
+        for _ in range(num_layers_per_block):
+            layers.extend([
+                torch.nn.Linear(dim, dim),
+                torch.nn.SELU()
+            ])
+        self.block = torch.nn.Sequential(*layers[:-1])
 
-class ResBlock(nn.Module):
-	def __init__(self, dim, device, dropout=0.0, preactivation=True):
-		super(ResBlock, self).__init__()
+    def forward(self, x):
+        return x + self.block(x)
+    
+class _ResNet(torch.nn.Module):
+    def __init__(self, dim, out_dim=None, w=64, time_varying=False, num_blocks=3, num_layers_per_block=2, device='cpu'):
+        super(_ResNet, self).__init__()
 
-		self.preactivation = preactivation
-		self.activ = nn.ModuleList([nn.BatchNorm1d(dim, eps=1e-3), nn.ReLU()]).to(device)
-		self.block = nn.ModuleList([nn.Linear(dim, dim),
-									nn.BatchNorm1d(dim, eps=1e-3),
-									nn.ReLU(),
-									nn.Dropout(p=dropout), 
-									nn.Linear(dim, dim)]).to(device)
-	def forward(self, x):
-		if self.preactivation:
-			h = self.activ[0](x)
-			h = self.activ[1](h)
-		else:
-			h = x
-		for i in range(len(self.block)): h = self.block[i](h)
-		f = h + x # skip connection
-		if not self.preactivation:
-			f = self.activ[0](f)
-			f = self.activ[1](f)
-		return f
+        if out_dim is None:
+            out_dim = dim
 
+        self.input_layer = torch.nn.Sequential(
+            torch.nn.Linear(dim + (1 if time_varying else 0), w),
+            torch.nn.SELU()
+        )
+        self.blocks = torch.nn.ModuleList([ResidualBlock(w, num_layers_per_block) for _ in range(num_blocks)])
+        self.output_layer = torch.nn.Linear(w, out_dim)
+        self.to(device)
 
-class _ResNet(nn.Module):
+    def forward(self, x):
+        x = self.input_layer(x)
+        for block in self.blocks:
+            x = block(x)
+        return self.output_layer(x)
 
-	def __init__(self, 
-	            dim=3, 
-	            dim_context=0, 
-		        dim_hidden=64, 
-		        num_layers=5, 
-		        device='cpu'):
-		
-		super(_ResNet, self).__init__()
-
-		self.position_embedding = nn.Linear(dim + dim_context, dim_hidden//2).to(device)
-		self.time_embedding = nn.Sequential(FourierFeatures(dim=dim_hidden//2), nn.Linear(dim_hidden//2, dim_hidden//2) ).to(device)
-		block = ResBlock(dim=dim_hidden, device=device)
-		self.blocks = nn.ModuleList([block for _ in range(num_layers)]).to(device)                         
-		self.final_layer = nn.Linear(dim_hidden, dim).to(device)
-
-	def forward(self, t, x, context=None, mask=None): 
-		t_emb = self.time_embedding(t) 
-		x_emb = self.position_embedding(x) 
-		xt = torch.cat([x_emb, t_emb], dim=-1)    # (B, P, dim_hidden)
-		for block in self.blocks: xt = block(xt)
-		f = self.final_layer(xt)
-		return f
-	
 class ResNet(nn.Module):
-    ''' Wrapper class for the ResNet architecture'''
-    def __init__(self, model_config):
+    ''' Wrapper class for the ResNet architecture
+    '''
+    def __init__(self, config):
         super(ResNet, self).__init__()
-        self.resnet = _ResNet(dim=model_config.dim_input, 
-                               dim_hidden=model_config.dim_hidden, 
-                               num_layers=model_config.num_layers,
-                               device=model_config.device)
+
+        self.resnet = _ResNet(dim=config.dim_input, 
+                            out_dim=None,
+                            w=config.dim_hidden, 
+                            num_blocks=config.num_blocks,
+                            num_layers_per_block=config.num_block_layers,
+                            time_varying=True,
+                            device=config.device)
                 
     def forward(self, t, x, context=None, mask=None):
-        return self.resnet.forward(t, x, context, mask)
-
-	
+        x = torch.cat([x, t], dim=-1)
+        return self.resnet.forward(x)
