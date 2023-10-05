@@ -65,7 +65,6 @@ class SimplifiedCondFlowMatching:
 		self.t0 = config.t0
 		self.t1 = config.t1
 		self.net = net
-		self.objective = config.objective
 
 	def z(self, batch):
 		""" conditional variable
