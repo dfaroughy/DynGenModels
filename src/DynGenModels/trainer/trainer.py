@@ -8,7 +8,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from dataclasses import dataclass
 from copy import deepcopy
 
-from DynGenModels.trainer.utils import Train_Step, Validation_Step
+from DynGenModels.trainer.utils import Train_Step, Validation_Step, RNGStateFixer
 
 class DynGenModelTrainer:
 
@@ -45,8 +45,9 @@ class DynGenModelTrainer:
             train.update(dataloader=self.dataloader.train, optimizer=optimizer) 
 
             if self.validate: 
-                valid.update(dataloader=self.dataloader.valid)
-                terminate, improved = valid.checkpoint(early_stopping=self.early_stopping)
+                with RNGStateFixer(self.seed):
+                    valid.update(dataloader=self.dataloader.valid)
+                    terminate, improved = valid.checkpoint(early_stopping=self.early_stopping)
 
                 if improved:
                     torch.save(self.dynamics.net.state_dict(), self.workdir + '/best_epoch_model.pth')

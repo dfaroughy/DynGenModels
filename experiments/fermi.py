@@ -9,11 +9,11 @@ configs = Configs(dataset = '../data/fermi/fermi_data_galactic_coord.npy',
                   features = ['theta', 'phi', 'energy'],
                   preprocess=['normalize', 'logit_transform', 'standardize'], 
                   cuts = {'theta': [-10., 10.], 'phi': [4., 10.], 'energy': [1000, 2000]},
-                  data_split_fracs = [1.0, 0.0, 0.0],
+                  data_split_fracs = [0.8, 0.2, 0.0],
                   epochs = 10000,
                   batch_size = 2048,
                   lr = 1e-3,
-                  dim_hidden = 256, 
+                  dim_hidden = 512, 
                   sigma = 0.0,
                   solver='midpoint',
                   num_sampling_steps=500)
@@ -59,13 +59,12 @@ for i in range(3):
     ax[i].hist(pipeline.target[..., i], bins=100, color=color[i], histtype='step', density=True)
     ax[i].set_xlabel(coord[i])
 plt.tight_layout()
-plt.savefig(configs.workdir +'/fermi_coords.pdf')
+plt.savefig(configs.workdir + '/fermi_coords.pdf')
 
 fig, ax = plt.subplots(1, 3, figsize=(9, 3))
 for i, j in [(0,1), (1,2), (2,0)]:
-    ax[i].scatter(dataset.target[:50000, i], dataset.target[:50000, j], s=1, alpha=0.1, c='silver')
-    ax[i].scatter(pipeline.target[:50000, i], pipeline.target[:50000, j], s=1, alpha=0.1, c=color[i])
+    ax[i].scatter(pipeline.target[..., i], pipeline.target[..., j], s=1, alpha=0.1, c=color[i])
     ax[i].set_xlabel(coord[i])
     ax[i].set_ylabel(coord[j])
 plt.tight_layout()
-plt.savefig('configs.workdir'+'/fermi_coords_2D.pdf')
+plt.savefig(configs.workdir + '/fermi_coords_2D.pdf')

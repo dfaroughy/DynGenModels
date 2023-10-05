@@ -42,7 +42,6 @@ class Validation_Step(nn.Module):
     def update(self, dataloader: DataLoader):
         self.loss = 0
         self.epoch += 1
-
         for batch in dataloader:
             loss_current = self.loss_fn(batch)
             self.loss += loss_current.detach().cpu().numpy()
@@ -70,3 +69,18 @@ class Validation_Step(nn.Module):
 
         return terminate, improved
 
+
+class RNGStateFixer:
+    
+    def __init__(self, seed):
+        self.seed = seed
+        self.saved_rng_state = None
+
+    def __enter__(self):
+        self.saved_rng_state = torch.get_rng_state()
+        torch.manual_seed(self.seed)
+        return 
+    
+    def __exit__(self, *args):
+        torch.set_rng_state(self.saved_rng_state)
+        return
