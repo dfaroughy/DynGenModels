@@ -1,6 +1,6 @@
 
 from DynGenModels.configs.utils import Configs
-from DynGenModels.datamodules.toys.configs import Gauss_Deconv_Configs, Gauss_2_Moons_Configs
+from DynGenModels.datamodules.toys.configs import Gauss_2_Moons_Configs
 from DynGenModels.models.configs import MLP_Configs, MAF_RQS_Configs, MAF_Affine_Configs
 from DynGenModels.dynamics.cnf.configs import FlowMatch_Configs
 from DynGenModels.dynamics.nf.configs import Deconvolution_NormFlow_Configs

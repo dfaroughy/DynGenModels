@@ -4,7 +4,7 @@ from typing import List, Dict
 
 @dataclass
 class DataConfigs:
-    data_name : str = 'fermi_galactic_center'
+    data_name : str = 'FermiGCE'
     dataset : str = '../data/fermi/fermi_data_galactic_coord.npy'
     features : List[str] = field(default_factory = lambda : ['theta', 'phi', 'energy'])
     dim_input : int = 3

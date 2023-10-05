@@ -4,7 +4,7 @@ from typing import List, Dict
 
 @dataclass
 class DataConfigs:
-    data_name : str = 'Gaia data'
+    data_name : str = 'Gaia'
     dataset : List[str] = field(default_factory = lambda : ['../data/gaia/data.angle_340.smeared_00.npy',
                                                             '../data/gaia/data.angle_340.smeared_00.cov.npy'])
     features : List[str] = field(default_factory = lambda : ['x', 'y', 'z', 'vx', 'vy', 'vz'])

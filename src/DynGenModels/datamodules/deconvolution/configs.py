@@ -5,7 +5,7 @@ from typing import List, Dict, Tuple
 @dataclass
 class DataConfigs:
     features : List[str] = field(default_factory = lambda : ['x', 'y'])
-    data_name : str = 'deconvolution'
+    data_name : str = 'Deconvolution'
     num_points : int = 10000
     dim_input : int = 2
 
