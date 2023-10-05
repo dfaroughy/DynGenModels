@@ -14,18 +14,22 @@ class GaiaDataset(Dataset):
         self.preprocess_methods = configs.preprocess 
         self.summary_stats = None
         
-        ''' datasets:
-            target data (t=1) :  fermi galaxy data
-            source data (t=0) :  std gaussian
+        ''' data attributes:
+            - target: gaia phase-space data (x, y, z, vx, vy, vz)
+            - target_preprocessed:  gaia data with cuts and preprocessing
+            - source: std gaussian noise
+            - covariance: covariance matrix of gaia observations uncertainites
         '''
 
-        self.target_preprocess = self.get_target_data()
-        self.source_preprocess = self.get_source_data()
+        self.get_target_data()
+        self.get_source_data()
+        self.get_covariance_data()
 
     def __getitem__(self, idx):
         output = {}
         output['target'] = self.target_preprocess[idx]
-        output['source'] = self.source_preprocess[idx]
+        output['source'] = self.source[idx]
+        output['covariance'] = self.covariance[idx]
         return output
 
     def __len__(self):
@@ -36,23 +40,16 @@ class GaiaDataset(Dataset):
             yield self[i]
 
     def get_target_data(self):
-        target = torch.tensor(np.load(self.dataset), dtype=torch.float32)        
-        target = PreProcessFermiData(target, cuts=self.cuts, methods=self.preprocess_methods)
+        target = torch.tensor(np.load(self.dataset[0]), dtype=torch.float32)        
+        target = PreProcessGaiaData(target, cuts=self.cuts, methods=self.preprocess_methods)
         target.apply_cuts()
-        self.target = target.features
+        self.target = target.features.clone()
         target.preprocess()
         self.summary_stats = target.summary_stats
-        print("INFO: loading and preprocessing data...")
-        print('\t- target dataset: {} \n \t- target shape: {}'.format(self.dataset, target.features.shape))
-        return target.features
+        self.target_preprocess = target.features.clone()
 
     def get_covariance_data(self):
-        covariance = torch.tensor(np.load(self.dataset), dtype=torch.float32)
-
-
-
+        self.covariance = torch.tensor(np.load(self.dataset[1]), dtype=torch.float32)
 
     def get_source_data(self):
         self.source = torch.randn_like(self.target, dtype=torch.float32)
-        print('\t- source dataset: std gaussian \n \t- source shape: {}'.format( self.source.shape))
-        return self.source

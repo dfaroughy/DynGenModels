@@ -7,7 +7,7 @@ from DynGenModels.dynamics.nf.configs import NormFlow_Configs
 from DynGenModels.pipelines.configs import NeuralODE_Sampler_Configs, NormFlows_Sampler_Configs
 
 
-FermiGCE_MLP_FlowMatch = Configs(data = FermiGCE_Configs,
-                                 model = MLP_Configs, 
-                                 dynamics = FlowMatch_Configs, 
-                                 pipeline = NeuralODE_Sampler_Configs)
+Gaia_MLP_FlowMatch = Configs(data = Gaia_Configs,
+                            model = MLP_Configs, 
+                            dynamics = FlowMatch_Configs, 
+                            pipeline = NeuralODE_Sampler_Configs)

@@ -23,3 +23,4 @@ Deconvolution_Gauss_MAF_RQS_NormFlow = Configs(data = Deconvolution_Gauss_Config
                                         model = MAF_RQS_Configs, 
                                         dynamics = Deconvolution_NormFlow_Configs, 
                                         pipeline = NormFlows_Sampler_Configs)
+

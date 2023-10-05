@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, Subset
 from torch.utils.data import Dataset
 from dataclasses import dataclass
 
-class FermiDataLoader:
+class GaiaDataLoader:
 
     def __init__(self, 
                  datasets: Dataset, 

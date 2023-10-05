@@ -14,22 +14,22 @@ class FermiDataset(Dataset):
         self.preprocess_methods = configs.preprocess 
         self.summary_stats = None
         
-        ''' datasets:
-            target data (t=1) :  fermi galaxy data
-            source data (t=0) :  std gaussian
+        ''' data attributes:
+            - target: fermi galaxy data (theta, phi, E)
+            - target_preprocessed:  fermi galaxy data with cuts and preprocessing
+            - source: std gaussian noise
         '''
-
-        self.target_preprocess = self.get_target_data()
-        self.source_preprocess = self.get_source_data()
+        self.get_target_data()
+        self.get_source_data()
 
     def __getitem__(self, idx):
         output = {}
         output['target'] = self.target_preprocess[idx]
-        output['source'] = self.source_preprocess[idx]
+        output['source'] = self.source[idx]
         return output
 
     def __len__(self):
-        return self.target_preprocess.size(0)
+        return self.target.size(0)
     
     def __iter__(self):
         for i in range(len(self)):
@@ -39,14 +39,10 @@ class FermiDataset(Dataset):
         target = torch.tensor(np.load(self.dataset), dtype=torch.float32)
         target = PreProcessFermiData(target, cuts=self.cuts, methods=self.preprocess_methods)
         target.apply_cuts()
-        self.target = target.features
+        self.target = target.features.clone()
         target.preprocess()
         self.summary_stats = target.summary_stats
-        print("INFO: loading and preprocessing data...")
-        print('\t- target dataset: {} \n \t- target shape: {}'.format(self.dataset, target.features.shape))
-        return target.features
+        self.target_preprocess = target.features.clone()
 
     def get_source_data(self):
         self.source = torch.randn_like(self.target, dtype=torch.float32)
-        print('\t- source dataset: std gaussian \n \t- source shape: {}'.format( self.source.shape))
-        return self.source

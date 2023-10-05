@@ -7,34 +7,31 @@ class PreProcessGaiaData:
     def __init__(self, 
                  data, 
                  cuts: dict={'r': None},
-                 r_sun: list=[8.122, 0.0, 0.0208],
-                 methods: list=['standardize']
+                 sun: list=[8.122, 0.0, 0.0208],
+                 methods: list=None
                  ):
         
         self.features = data
         self.cuts = cuts 
-        self.sun = r_sun
+        self.sun = torch.Tensor(sun)
         self.methods = methods
         self.summary_stats = {}
 
     def apply_cuts(self):
-        ''' center sun in origin and apply radial cut at a few kiloparsec
+        ''' remove all stars with distance to sun farther than 'r' kiloparsecs
         '''
-        x = self.features[..., 0] - self.sun[0]
-        y = self.features[..., 1] - self.sun[1]
-        z = self.features[..., 2] - self.sun[2]
-        r = torch.sqrt(x**2 + y**2 + z**2)
-        mask = (r >= self.cuts['radial') & (r <= self.cuts['radial')
+        r = torch.norm(self.features[..., :3] - self.sun, dim=-1)
+        mask = r <= self.cuts['r'][1]
         self.features = self.features[mask]
 
     def preprocess(self):        
-        #...preprocess with provided methods
-        for method in self.methods:
-            method = getattr(self, method, None)
-            if method and callable(method): method()
-            else: raise ValueError('Preprocessing method {} not implemented'.format(method))
+        if self.methods is not None:
+            for method in self.methods:
+                method = getattr(self, method, None)
+                if method and callable(method): method()
+                else: raise ValueError('Preprocessing method {} not implemented'.format(method))
+        else: pass
     
-
     def standardize(self,  sigma: float=1.0):
         """ standardize data to have zero mean and unit variance
         """
@@ -42,46 +39,48 @@ class PreProcessGaiaData:
         self.summary_stats['std'] = torch.std(self.features, dim=0)
         self.features = (self.features - self.summary_stats['mean']) * (sigma / self.summary_stats['std'])
 
-    def normalize(self):
-        """ normalize data to unit interval
+    def unit_ball_transform(self, c=1+1e-6):
+        """ transform data do unit ball around galactic origin
         """
-        self.summary_stats['min'], _ = torch.min(self.features[..., :3], dim=0)
-        self.summary_stats['max'], _ = torch.max(self.features[..., :3], dim=0)
-        self.features[..., :3] = (self.features[..., :3] - self.summary_stats['min']) / ( self.summary_stats['max'] - self.summary_stats['min'])
-    
-    def logit_transform(self, alpha=1e-5):
-        """ smoothen rectified distribution with logit transform
-        """
-        self.features[..., :3] = self.features[..., :3] * (1 - 2 * alpha) + alpha
-        self.features[..., :3] = torch.log(self.features[..., :3] / (1 - self.features[..., :3]))
+        r = torch.norm(self.features[..., :3] - self.sun, dim=-1)
+        self.summary_stats['r_max'] = torch.max(r) * c
+        self.features[..., :3] = (self.features[..., :3] - self.sun) / self.summary_stats['r_max']
 
-
+    def radial_blowup(self):
+        norm = torch.linalg.norm(self.features[..., :3], dim=-1, keepdims=True)
+        self.features[...,:3] = (self.features[..., :3] / norm) * torch.atanh(norm)
+        return self
 
 class PostProcessGaiaData:
 
     def __init__(self, 
                  data, 
                  summary_stats,
-                 methods: list=['inverse_standardize']
+                 sun: list=[8.122, 0.0, 0.0208],
+                 methods: list=None
                  ):
         
         self.features = data
+        self.sun = torch.Tensor(sun)
         self.summary_stats = summary_stats
         self.methods = methods
 
     def postprocess(self):
-        for method in self.methods:
-            method = getattr(self, method, None)
-            if method and callable(method): method()
-            else: raise ValueError('Postprocessing method {} not implemented'.format(method))
+        if self.methods is not None:
+            for method in self.methods:
+                method = getattr(self, method, None)
+                if method and callable(method): method()
+                else: raise ValueError('Postprocessing method {} not implemented'.format(method))
+        else: pass
 
     def inverse_standardize(self,  sigma: float=1.0):
         self.features = self.features * (self.summary_stats['std'] / sigma) + self.summary_stats['mean']
-
-    def inverse_normalize(self):
-        self.features[..., :3] = self.features[..., :3] * (self.summary_stats['max'] - self.summary_stats['min']) + self.summary_stats['min']
     
-    def inverse_logit_transform(self, alpha=1e-5):
-        exp = torch.exp(self.features)
-        self.features[..., :3] = exp / (1 + exp)
-        self.features[..., :3] = (self.features[..., :3] - alpha) / (1 - 2 * alpha)
+    def inverse_unit_ball_transform(self, c=1+1e-6):
+        """ transform data do unit ball around galactic origin
+        """
+        self.features[..., :3] = self.features[..., :3] * self.summary_stats['r_max'] + self.sun
+
+    def inverse_radial_blowup(self):
+        norm = torch.linalg.norm(self.features[..., :3], dim=-1, keepdims=True)
+        self.features[...,:3] = (self.features[..., :3] / norm) * torch.tanh(norm)

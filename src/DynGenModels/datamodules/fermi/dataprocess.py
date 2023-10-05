@@ -7,7 +7,7 @@ class PreProcessFermiData:
     def __init__(self, 
                  data, 
                  cuts: dict={'theta': None, 'phi': None, 'energy': None},
-                 methods: list=['standardize']
+                 methods: list=None
                  ):
         
         self.features = data
@@ -21,11 +21,12 @@ class PreProcessFermiData:
         self.selection_cuts(feature='phi', cut=self.cuts['phi'])
 
     def preprocess(self):        
-        #...preprocess with provided methods
-        for method in self.methods:
-            method = getattr(self, method, None)
-            if method and callable(method): method()
-            else: raise ValueError('Preprocessing method {} not implemented'.format(method))
+        if self.methods is not None:
+            for method in self.methods:
+                method = getattr(self, method, None)
+                if method and callable(method): method()
+                else: raise ValueError('Preprocessing method {} not implemented'.format(method))
+        else: pass
     
     def selection_cuts(self, feature, cut=None):
         if cut is None: cut=[-np.inf, np.inf]
@@ -54,13 +55,12 @@ class PreProcessFermiData:
         self.features = torch.log(self.features / (1 - self.features))
 
 
-
 class PostProcessFermiData:
 
     def __init__(self, 
                  data, 
                  summary_stats,
-                 methods: list=['inverse_standardize']
+                 methods: list=None
                  ):
         
         self.features = data
@@ -68,10 +68,12 @@ class PostProcessFermiData:
         self.methods = methods
 
     def postprocess(self):
-        for method in self.methods:
-            method = getattr(self, method, None)
-            if method and callable(method): method()
-            else: raise ValueError('Postprocessing method {} not implemented'.format(method))
+        if self.methods is not None:
+            for method in self.methods:
+                method = getattr(self, method, None)
+                if method and callable(method): method()
+                else: raise ValueError('Postprocessing method {} not implemented'.format(method))
+        else: pass
 
     def inverse_standardize(self,  sigma: float=1.0):
         self.features = self.features * (self.summary_stats['std'] / sigma) + self.summary_stats['mean']
