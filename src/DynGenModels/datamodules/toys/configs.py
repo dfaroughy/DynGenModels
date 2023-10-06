@@ -8,6 +8,7 @@ class DataConfigs:
     data_name : str = 'Toys'
     num_points : int = 10000
     dim_input : int = 2
+    exchange_source_with_target : bool = False
 
 #...custom configs:
 

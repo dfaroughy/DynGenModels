@@ -15,6 +15,7 @@ class Gauss_2_Moons_Dataset(Dataset):
         self.gauss_N_var = configs.gauss_N_var 
         self.gauss_centers = configs.gauss_centers
         self.moon_2_noise = configs.moon_2_noise
+        self.exchange_source_with_target = configs.exchange_source_with_target
 
         ''' datasets:
             source data (x0) :  N gaussians on unit circle
@@ -26,8 +27,8 @@ class Gauss_2_Moons_Dataset(Dataset):
 
     def __getitem__(self, idx):
         output = {}
-        output['target'] = self.target[idx]
-        output['source'] = self.source[idx]
+        output['target'] = self.target[idx] if self.exchange_source_with_target is False else self.source[idx]
+        output['source'] = self.source[idx] if self.exchange_source_with_target is False else self.target[idx]
         return output
 
     def __len__(self):
