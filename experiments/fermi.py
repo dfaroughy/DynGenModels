@@ -10,13 +10,14 @@ configs = Configs(dataset = '../data/fermi/fermi_data_galactic_coord.npy',
                   preprocess=['normalize', 'logit_transform', 'standardize'], 
                   cuts = {'theta': [-10., 10.], 'phi': [4., 10.], 'energy': [1000, 2000]},
                   data_split_fracs = [0.8, 0.2, 0.0],
-                  epochs = 10000,
+                  epochs = 10,
                   batch_size = 2048,
                   lr = 1e-3,
-                  dim_hidden = 512, 
+                  dim_hidden = 16, 
                   sigma = 0.0,
                   solver='midpoint',
-                  num_sampling_steps=500)
+                  device='cpu',
+                  num_sampling_steps=50)
 
 #...set working directory for results:
 
@@ -29,8 +30,8 @@ from DynGenModels.datamodules.fermi.dataloader import FermiDataLoader
 from DynGenModels.models.deep_nets import MLP
 from DynGenModels.dynamics.cnf.flowmatch import SimplifiedCondFlowMatching
 
-dataset = FermiDataset(configs)
-dataloader = FermiDataLoader(dataset, configs)
+fermi = FermiDataset(configs)
+dataloader = FermiDataLoader(fermi, configs)
 net = MLP(configs)
 dynamics = SimplifiedCondFlowMatching(net, configs)
 cfm = DynGenModelTrainer(dynamics=dynamics, dataloader=dataloader, configs=configs)
@@ -55,7 +56,7 @@ color=['gold', 'darkblue', 'darkred']
 
 fig, ax = plt.subplots(1, 3, figsize=(9, 3))
 for i in range(3):
-    ax[i].hist(dataset.target[..., i], bins=100, color='silver', density=True)
+    ax[i].hist(fermi.target[..., i], bins=100, color='silver', density=True)
     ax[i].hist(pipeline.target[..., i], bins=100, color=color[i], histtype='step', density=True)
     ax[i].set_xlabel(coord[i])
 plt.tight_layout()
@@ -63,8 +64,9 @@ plt.savefig(configs.workdir + '/fermi_coords.pdf')
 
 fig, ax = plt.subplots(1, 3, figsize=(9, 3))
 for i, j in [(0,1), (1,2), (2,0)]:
-    ax[i].scatter(pipeline.target[..., i], pipeline.target[..., j], s=1, alpha=0.1, c=color[i])
+    ax[i].hexbin(pipeline.target[..., i], pipeline.target[..., j], cmap='plasma', gridsize=200)
     ax[i].set_xlabel(coord[i])
     ax[i].set_ylabel(coord[j])
 plt.tight_layout()
+plt.show()
 plt.savefig(configs.workdir + '/fermi_coords_2D.pdf')
