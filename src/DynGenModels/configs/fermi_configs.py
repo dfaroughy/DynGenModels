@@ -38,11 +38,11 @@ FermiGCE_MAF_Affine_NormFlow = Configs(data = FermiGCE_Configs,
                                       pipeline = NormFlows_Sampler_Configs)
 
 
-
 FermiGCE_MAF_RQS_NormFlow = Configs(data = FermiGCE_Configs,
                                     model = MAF_RQS_Configs, 
                                     dynamics = NormFlow_Configs, 
                                     pipeline = NormFlows_Sampler_Configs)
+
 
 FermiGCE_Couplings_RQS_NormFlow = Configs(data = FermiGCE_Configs,
                                           model = Couplings_RQS_Configs, 

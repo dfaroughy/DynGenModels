@@ -55,8 +55,8 @@ class FlowMatchPipeline:
                         sensitivity=self.sensitivity, 
                         seminorm=True if self.solver=='dopri5' else False,
                         atol=self.atol if self.solver=='dopri5' else None, 
-                        rtol=self.rtol if self.solver=='dopri5' else None
-                        )
+                        rtol=self.rtol if self.solver=='dopri5' else None)
+        
         if self.source is None:
             assert self.model.dataloader.test is not None, "No test dataset available! provide source input!"
             trajectories = []
@@ -68,7 +68,9 @@ class FlowMatchPipeline:
         return trajectories
 
     def postprocess(self, trajectories):
-        sample = self.postprocessor(data=trajectories, summary_stats=self.stats, methods=self.postprocess_methods)
+        sample = self.postprocessor(data=trajectories, 
+                                    summary_stats=self.stats, 
+                                    methods=self.postprocess_methods)
         sample.postprocess()
         return sample.features
 
