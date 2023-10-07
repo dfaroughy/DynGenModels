@@ -16,7 +16,7 @@ configs = Configs(dataset = '../data/fermi/fermi_data_galactic_coord.npy',
                   dim_hidden = 16, 
                   sigma = 0.0,
                   solver='midpoint',
-                  device='cpu',
+                  device='cuda:1',
                   num_sampling_steps=50)
 
 #...set working directory for results:
@@ -28,7 +28,7 @@ configs.set_workdir(path='../results', save_config=True)
 from DynGenModels.datamodules.fermi.datasets import FermiDataset 
 from DynGenModels.datamodules.fermi.dataloader import FermiDataLoader 
 from DynGenModels.models.deep_nets import MLP
-from DynGenModels.dynamics.cnf.flowmatch import SimplifiedCondFlowMatching
+from DynGenModels.dynamics.cnf.condflowmatch import SimplifiedCondFlowMatching
 
 fermi = FermiDataset(configs)
 dataloader = FermiDataLoader(fermi, configs)
