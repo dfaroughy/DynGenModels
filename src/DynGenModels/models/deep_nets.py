@@ -8,10 +8,8 @@ import numpy as np
 class _MLP(torch.nn.Module):
     def __init__(self, dim, out_dim=None, w=64, time_varying=False, num_layers=3, device='cpu'):
         super().__init__()
-        
         self.time_varying = time_varying
         if out_dim is None: out_dim = dim
-        
         layers = [torch.nn.Linear(dim + (1 if time_varying else 0), w), torch.nn.SELU()]
         for _ in range(num_layers-1): layers.extend([torch.nn.Linear(w, w), torch.nn.SELU()])
         layers.append(torch.nn.Linear(w, out_dim))
@@ -26,15 +24,18 @@ class MLP(nn.Module):
     def __init__(self, config):
         super(MLP, self).__init__()
 
+        self.device = config.device
+
         self.mlp = _MLP(dim=config.dim_input, 
                        out_dim=None,
                        w=config.dim_hidden, 
                        num_layers=config.num_layers,
                        time_varying=True,
                        device=config.device)
-                
+                        
     def forward(self, t, x, context=None, mask=None):
         x = torch.cat([x, t], dim=-1)
+        x.to(self.device)
         return self.mlp.forward(x)
     
 #...ResNet architecture:
