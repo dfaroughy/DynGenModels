@@ -47,7 +47,7 @@ class SimplifiedCondFlowMatching:
 		self.sample_time() 
 		self.sample_path()
 		v = self.net(x=self.path, t=self.t)
-		u = self.u 
+		u = self.u.to(v.device)
 		loss = torch.square(v - u)
 		return torch.mean(loss)
 

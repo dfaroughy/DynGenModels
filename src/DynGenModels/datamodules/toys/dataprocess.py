@@ -7,7 +7,7 @@ class PreProcessGaussData:
     def __init__(self, 
                  data, 
                  cuts: dict=None,
-                 methods: list=['standardize']
+                 methods: list=None 
                  ):
         
         self.features = data
@@ -58,7 +58,7 @@ class PostProcessGaussData:
     def __init__(self, 
                  data, 
                  summary_stats,
-                 methods: list=['inverse_standardize']
+                 methods: list = None 
                  ):
         
         self.features = data
@@ -72,11 +72,15 @@ class PostProcessGaussData:
             else: raise ValueError('Postprocessing method {} not implemented'.format(method))
 
     def inverse_standardize(self,  sigma: float=1.0):
-        self.features = self.features * (self.summary_stats['std'] / sigma) + self.summary_stats['mean']
+        std = self.summary_stats['std'].to(self.features.device)
+        mean = self.summary_stats['mean'].to(self.features.device)
+        self.features = self.features * (std / sigma) + mean
 
     def inverse_normalize(self):
-        self.features = self.features * (self.summary_stats['max'] - self.summary_stats['min']) + self.summary_stats['min']
-    
+        min = self.summary_stats['min'].to(self.features.device)
+        max = self.summary_stats['max'].to(self.features.device)
+        self.features = self.features * (max - min) + min
+
     def inverse_logit_transform(self, alpha=1e-5):
         exp = torch.exp(self.features)
         self.features = exp / (1 + exp)

@@ -1,7 +1,7 @@
 import torch
 from dataclasses import dataclass
 
-from DynGenModels.dynamics.cnf.flowmatch import SimplifiedCondFlowMatching
+from DynGenModels.dynamics.cnf.condflowmatch import SimplifiedCondFlowMatching
 
 class DeconvolutionMatching:
 
@@ -47,7 +47,7 @@ class DeconvolutionMatching:
 		self.sample_time() 
 		self.sample_path()
 		v = self.net(x=self.path, t=self.t)
-		u = self.u 
+		u = self.u.to(v.device)
 		loss = torch.square(v - u)
 		return torch.mean(loss)
 
@@ -135,7 +135,7 @@ class DeconvolutionCondMatching(SimplifiedCondFlowMatching):
 # 		self.sample_time() 
 # 		self.sample_path()
 # 		v = self.net(x=self.path, t=self.t)
-# 		u = self.u 
+# 		u = self.u.to(v.device)
 # 		loss = torch.square(v - u)
 # 		return torch.mean(loss)
 

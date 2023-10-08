@@ -74,12 +74,15 @@ class PostProcessGaiaData:
         else: pass
 
     def inverse_standardize(self,  sigma: float=1.0):
-        self.features = self.features * (self.summary_stats['std'] / sigma) + self.summary_stats['mean']
+        std = self.summary_stats['std'].to(self.features.device)
+        mean = self.summary_stats['mean'].to(self.features.device)
+        self.features = self.features * (std / sigma) + mean
+    
     
     def inverse_unit_ball_transform(self, c=1+1e-6):
-        """ transform data do unit ball around galactic origin
-        """
-        self.features[..., :3] = self.features[..., :3] * self.summary_stats['r_max'] + self.sun
+        r_max = self.summary_stats['r_max'].to(self.features.device)
+        r_sun = self.sun.to(self.features.device)
+        self.features[..., :3] = self.features[..., :3] * r_max + r_sun
 
     def inverse_radial_blowup(self):
         norm = torch.linalg.norm(self.features[..., :3], dim=-1, keepdims=True)

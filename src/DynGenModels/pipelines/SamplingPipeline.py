@@ -34,8 +34,9 @@ class FlowMatchPipeline:
         self.sensitivity = configs.sensitivity if sensitivity is None else sensitivity
         self.atol = configs.atol if atol is None else atol
         self.rtol = configs.rtol if rtol is None else rtol
+        self.device = configs.device
 
-        self.time_steps = torch.linspace(self.t0, self.t1, self.num_sampling_steps)
+        self.time_steps = torch.linspace(self.t0, self.t1, self.num_sampling_steps, device=self.device)
         self.trajectories = self.ODEsolver()
 
         if self.postprocessor is not None:
@@ -45,6 +46,7 @@ class FlowMatchPipeline:
 
         self.target = self.postprocess(self.trajectories[-1]) if postprocessor is not None else self.trajectories[-1]
         self.source = self.postprocess(self.trajectories[0]) if postprocessor is not None else self.trajectories[0]
+        
 
     @torch.no_grad()
     def ODEsolver(self):
@@ -60,12 +62,13 @@ class FlowMatchPipeline:
         if self.source is None:
             assert self.model.dataloader.test is not None, "No test dataset available! provide source input!"
             trajectories = []
-            for batch in tqdm(self.model.dataloader.test, desc="sampling"):
+            source = self.model.dataloader.test.to(self.device)
+            for batch in tqdm(source, desc="sampling"):
                 trajectories.append(node.trajectory(x=batch['source'], t_span=self.time_steps))
             trajectories = torch.cat(trajectories, dim=1)
         else:
-            trajectories = node.trajectory(x=self.source, t_span=self.time_steps)
-        return trajectories
+            trajectories = node.trajectory(x=self.source.to(self.device), t_span=self.time_steps)
+        return trajectories.detach().cpu() 
 
     def postprocess(self, trajectories):
         sample = self.postprocessor(data=trajectories, 
@@ -100,7 +103,7 @@ class NormFlowPipeline:
 
     @torch.no_grad()
     def sampler(self):
-        return self.model.dynamics.flow.sample(self.num_gen_samples).detach()
+        return self.model.dynamics.flow.sample(self.num_gen_samples).detach().cpu() 
 
     def postprocess(self, samples):
         sample = self.postprocessor(data=samples, summary_stats=self.stats, methods=self.postprocess_methods)
