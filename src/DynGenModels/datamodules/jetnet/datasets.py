@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 from dataclasses import dataclass
-from jetnet.datasets import JetNet
+from jetnet.datasets import JetNet as JN
 
 from DynGenModels.datamodules.jetnet.dataprocess import PreProcessJetNetData
 
@@ -40,11 +40,11 @@ class JetNetDataset(Dataset):
                 "num_particles": self.num_particles,
                 "jet_features": ["type", "pt", "eta", "mass"]}
 
-        particle_data, jet_data = JetNet.getData(**args)
+        particle_data, jet_data = JN.getData(**args)
         self.particles = torch.Tensor(particle_data[..., :-1])
         self.mask = torch.Tensor(particle_data[..., -1])
         self.jets = torch.Tensor(jet_data)
-        particles = PreProcessJetNetData(self.particles, methods=self.preprocess_methods)
+        particles = PreProcessJetNetData(self.particles, self.mask, methods=self.preprocess_methods)
         particles.preprocess()
         self.summary_stats = particles.summary_stats
         self.particles_preprocess = particles.features.clone()

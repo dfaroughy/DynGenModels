@@ -5,11 +5,13 @@ import numpy as np
 class PreProcessJetNetData:
 
     def __init__(self, 
-                 data, 
+                 data,
+                 mask, 
                  methods: list=None
                  ):
         
         self.features = data
+        self.mask = mask[..., None]
         self.methods = methods
         self.summary_stats = {}
 
@@ -24,9 +26,10 @@ class PreProcessJetNetData:
     def standardize(self,  sigma: float=1.0):
         """ standardize data to have zero mean and unit variance
         """
-        self.summary_stats['mean'] = torch.mean(self.features, dim=0)
-        self.summary_stats['std'] = torch.std(self.features, dim=0)
+        self.summary_stats['mean'] = (self.features * self.mask).view(-1, self.features.shape[-1]).mean(dim=0)
+        self.summary_stats['std'] = (self.features * self.mask).view(-1, self.features.shape[-1]).std(dim=0)
         self.features = (self.features - self.summary_stats['mean']) * (sigma / self.summary_stats['std'])
+        self.features = self.features * self.mask
 
 
 class PostProcessJetNetData:
@@ -52,5 +55,5 @@ class PostProcessJetNetData:
     def inverse_standardize(self,  sigma: float=1.0):
         std = self.summary_stats['std'].to(self.features.device)
         mean = self.summary_stats['mean'].to(self.features.device)
-        self.features = self.features * (self.summary_stats['std'] / sigma) + self.summary_stats['mean']
+        self.features = self.features * (std  / sigma) + mean
     

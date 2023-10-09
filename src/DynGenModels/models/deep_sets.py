@@ -82,11 +82,11 @@ class EPiC(nn.Module):
                                  equiv_layers = configs.num_epic_layers,
                                  time_varying=True)
                         
-    def forward(self, t, x, mask):
-        t = t.repeat(1, x.shape[1], 1)
+    def forward(self, t, x, mask=None, sampling=False):
+        t = t.repeat(1, x.shape[1], 1) if not sampling else t
         x = torch.cat([x, t], dim=-1)
         x = x.to(self.device)
-        mask = mask[..., None].to(self.device) if mask is not None else None
+        mask = mask[..., None].to(self.device) if mask is not None else torch.ones_like(t).to(self.device)
         self.epic = self.epic.to(self.device)
         return self.epic.forward(x, mask)
 
