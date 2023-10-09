@@ -38,7 +38,7 @@ class MAF_Affine_Configs(Training_Configs):
     num_blocks : int = 2 
     use_residual_blocks: bool = False
     dropout : float = 0.0
-    use_batch_norm : bool = False
+    use_batch_norm : bool = True
 
 @dataclass
 class Couplings_Affine_Configs(Training_Configs):
@@ -47,7 +47,7 @@ class Couplings_Affine_Configs(Training_Configs):
     num_blocks : int = 2 
     use_residual_blocks: bool = False
     dropout : float = 0.0
-    use_batch_norm : bool = False
+    use_batch_norm : bool = True
 
 @dataclass
 class MAF_RQS_Configs(Training_Configs):
@@ -56,7 +56,7 @@ class MAF_RQS_Configs(Training_Configs):
     num_blocks : int = 2 
     use_residual_blocks : bool= False
     dropout : float = 0.0
-    use_batch_norm : bool = False
+    use_batch_norm : bool = True
     num_bins : int = 10
     tails : str = 'linear'
     tail_bound : int = 5
@@ -69,7 +69,7 @@ class Couplings_RQS_Configs(Training_Configs):
     num_blocks : int = 2 
     use_residual_blocks : bool= False
     dropout : float = 0.0
-    use_batch_norm : bool = False
+    use_batch_norm : bool = True
     num_bins : int = 10
     tails : str = 'linear'
     tail_bound : int = 5
