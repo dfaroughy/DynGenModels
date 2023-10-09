@@ -1,0 +1,4 @@
+pytorch
+torchdyn
+tensorboard
+jetnet
