@@ -11,14 +11,15 @@ configs = Configs(data_dir = '../../data/jetnet',
                   num_particles = 30,
                   jet_types = 't',
                   data_split_fracs = [0.8, 0.2, 0.0],
-                  epochs = 3,
+                  epochs = 10000,
                   batch_size = 1024,
                   lr = 1e-3,
-                  dim_hidden = 32, 
-                  num_epic_layers = 2,
+                  dim_hidden = 128, 
+                  num_epic_layers = 6,
                   sigma = 1e-5,
                   solver='midpoint',
-                  num_sampling_steps=100)
+                  num_sampling_steps=500,
+                  device='cuda:1')
 
 #...set working directory for results:
 
