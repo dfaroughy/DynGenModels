@@ -46,7 +46,7 @@ class SimplifiedCondFlowMatching:
 		self.conditional_vector_fields()
 		self.sample_time() 
 		self.sample_path()
-		v = self.net(x=self.path, t=self.t)
+		v = self.net(x=self.path, t=self.t, mask=batch['mask'])
 		u = self.u.to(v.device)
 		loss = torch.square(v - u)
 		return torch.mean(loss)

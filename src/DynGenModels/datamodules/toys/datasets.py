@@ -29,6 +29,8 @@ class Gauss_2_Moons_Dataset(Dataset):
         output = {}
         output['target'] = self.target[idx] if self.exchange_source_with_target is False else self.source[idx]
         output['source'] = self.source[idx] if self.exchange_source_with_target is False else self.target[idx]
+        output['mask'] = torch.ones_like(self.target[idx][..., 0])
+        output['context'] = torch.empty_like(self.target[idx][..., 0])
         return output
 
     def __len__(self):

@@ -26,6 +26,8 @@ class FermiDataset(Dataset):
         output = {}
         output['target'] = self.target_preprocess[idx]
         output['source'] = self.source[idx]
+        output['mask'] = torch.ones_like(self.target_preprocess[idx][..., 0])
+        output['context'] = torch.empty_like(self.target_preprocess[idx][..., 0])
         return output
 
     def __len__(self):

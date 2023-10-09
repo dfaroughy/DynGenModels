@@ -28,6 +28,8 @@ class SmearedGaussDataset(torch.utils.data.Dataset):
         output = {}
         output['smeared'] = self.smeared[idx]
         output['covariance'] = self.covs[idx]
+        output['mask'] = torch.ones_like(self.smeared[idx][..., 0])
+        output['context'] = torch.empty_like(self.smeared[idx][..., 0])
         return output
 
     def __len__(self):
