@@ -15,6 +15,23 @@ class ResNet_Configs(Training_Configs):
     num_block_layers : int = 2
 
 @dataclass
+class DeepSets_Configs(Training_Configs):
+    model_name : str = 'DeepSets'
+    dim_hidden : int = 128   
+    num_layers_1 : int = 3
+    num_layers_2 : int = 3
+    poolings : str = 'meansum'
+
+@dataclass
+class EPiC_Configs(Training_Configs):
+    model_name : str = 'EPiC'
+    dim_hidden : int = 128
+    dim_global : int = 10
+    num_epic_layers : int = 6
+
+#...Normalizing Flow Models:
+
+@dataclass
 class MAF_Affine_Configs(Training_Configs):
     model_name : str = 'MAF_Affine'
     dim_hidden : int = 128 

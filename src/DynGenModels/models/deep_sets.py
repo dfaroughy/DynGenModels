@@ -1,0 +1,180 @@
+import torch
+from torch import nn
+from torch.nn import functional as F
+import numpy as np
+
+import torch.nn.utils.weight_norm as weight_norm
+
+
+class DeepSets(nn.Module):
+    ''' Wrapper class for the DeepSets architecture
+    '''
+    def __init__(self, config):
+        super(DeepSets, self).__init__()
+        self.device = config.device
+        self.deepsets = _DeepSets(dim=config.dim_input, 
+                                  dim_hidden=config.dim_hidden, 
+                                  num_layers_1=config.num_layers_1,
+                                  num_layers_2=config.num_layers_2,
+                                  pool=config.poolings,
+                                  time_varying=True)
+                        
+    def forward(self, t, x, mask):
+        t = t.repeat(1, x.shape[1], 1)
+        print(1, x.shape, t.shape)
+        x = torch.cat([x, t], dim=-1)
+        x = x.to(self.device)
+        mask = mask.to(self.device) if mask is not None else None
+        self.deepsets = self.deepsets.to(self.device)
+        return self.deepsets.forward(x, mask)
+
+
+class _DeepSets(torch.nn.Module):
+    def __init__(self, 
+                 dim, 
+                 dim_hidden=64, 
+                 num_layers_1=3,
+                 num_layers_2=3,
+                 pool='sum',
+                 time_varying=False, 
+                 ):
+        
+        super().__init__()
+        
+        self.pool = pool
+        self.time_varying = time_varying
+        s = 2 if pool == 'meansum' else 1      
+    
+        phi_layers = [torch.nn.Linear(dim + (1 if time_varying else 0), dim_hidden), torch.nn.SELU()]
+        for _ in range(num_layers_1-1): phi_layers.extend([torch.nn.Linear(dim_hidden, dim_hidden), torch.nn.SELU()])
+        phi_layers.append(torch.nn.Linear(dim_hidden, dim_hidden))
+        self.phi = torch.nn.Sequential(*phi_layers)
+
+        rho_layers = [torch.nn.Linear(s * dim_hidden, dim_hidden), torch.nn.SELU()]
+        for _ in range(num_layers_2-1): rho_layers.extend([torch.nn.Linear(dim_hidden, dim_hidden), torch.nn.SELU()])
+        rho_layers.append(torch.nn.Linear(dim_hidden, dim))
+        self.rho = torch.nn.Sequential(*rho_layers)
+
+    def forward(self, x, mask):
+        mask = mask.unsqueeze(-1) if mask is not None else torch.ones_like(x[..., 0]).unsqueeze(-1)
+        h = self.phi(x)
+        h_sum = (h * mask).sum(1, keepdim=False)   
+        h_mean = h_sum / mask.sum(1, keepdim=False)  
+        if self.pool == 'sum': h_pool = h_sum  
+        elif self.pool == 'mean': h_pool = h_mean 
+        elif self.pool == 'meansum': h_pool = torch.cat([h_mean, h_sum], dim=1) 
+        return self.rho(h_pool)                        
+    
+
+
+#...EPiC Network:
+
+class EPiC(nn.Module):
+    ''' Wrapper class for the EPiC architecture
+    '''
+    def __init__(self, configs):
+        super(EPiC, self).__init__()
+        self.device = configs.device
+        self.epic = EPiC_Network(feats = configs.dim_input, 
+                                 latent_global = configs.dim_global,
+                                 latent_local = configs.dim_input,
+                                 hid_d = configs.dim_hidden, 
+                                 equiv_layers = configs.num_epic_layers,
+                                 time_varying=True)
+                        
+    def forward(self, t, x, mask):
+        t = t.repeat(1, x.shape[1], 1)
+        x = torch.cat([x, t], dim=-1)
+        x = x.to(self.device)
+        mask = mask[..., None].to(self.device) if mask is not None else None
+        self.epic = self.epic.to(self.device)
+        return self.epic.forward(x, mask)
+
+# from https://github.com/uhh-pd-ml/EPiC-GAN/blob/main/models.py
+
+class EPiC_layer(nn.Module):
+    def __init__(self, local_in_dim, hid_dim, latent_dim):
+        super(EPiC_layer, self).__init__()
+        self.fc_global1 = weight_norm(nn.Linear(int(2*hid_dim)+latent_dim, hid_dim)) 
+        self.fc_global2 = weight_norm(nn.Linear(hid_dim, latent_dim)) 
+        self.fc_local1 = weight_norm(nn.Linear(local_in_dim+latent_dim, hid_dim))
+        self.fc_local2 = weight_norm(nn.Linear(hid_dim, hid_dim))
+
+    def forward(self, x_global, x_local):   # shapes: x_global[b,latent], x_local[b,n,latent_local]
+        _, num_points, _ = x_local.size()
+        latent_global = x_global.size(1)
+
+        x_pooled_sum = x_local.sum(1, keepdim=False)
+        x_pooled_mean = x_local.mean(1, keepdim=False)
+        x_pooledCATglobal = torch.cat([x_pooled_mean, x_pooled_sum, x_global], 1)
+        x_global1 = F.leaky_relu(self.fc_global1(x_pooledCATglobal))  # new intermediate step
+        x_global = F.leaky_relu(self.fc_global2(x_global1) + x_global) # with residual connection before AF
+
+        x_global2local = x_global.view(-1,1,latent_global).repeat(1,num_points,1) # first add dimension, than expand it
+        x_localCATglobal = torch.cat([x_local, x_global2local], 2)
+        x_local1 = F.leaky_relu(self.fc_local1(x_localCATglobal))  # with residual connection before AF
+        x_local = F.leaky_relu(self.fc_local2(x_local1) + x_local)
+
+        return x_global, x_local
+
+
+class EPiC_Network(nn.Module):
+    def __init__(self, 
+                 feats = 3,
+                 latent_global = 10,    # used for latent size of equiv concat
+                 latent_local = 3,
+                 hid_d = 256, 
+                 equiv_layers = 3,
+                 time_varying = False):
+        
+        super(EPiC_Network, self).__init__()
+        self.latent_global = latent_global   # used for latent size of equiv concat
+        self.latent_local = latent_local + (1 if time_varying else 0)  # noise
+        self.hid_d = hid_d   
+        self.feats = feats
+        self.equiv_layers = equiv_layers
+        self.time_varying = time_varying
+        
+        self.local_0 = weight_norm(nn.Linear(self.latent_local, self.hid_d))  # local projection_mlp
+        self.loc_to_glob = weight_norm(nn.Linear(2 * self.latent_local, self.latent_global)) # local to global projection_mlp
+        self.global_0 = weight_norm(nn.Linear(self.latent_global, self.hid_d))
+        self.global_1 = weight_norm(nn.Linear(self.hid_d, self.latent_global))
+        
+        self.epic_layers = nn.ModuleList()
+        for _ in range(self.equiv_layers):
+            self.epic_layers.append(EPiC_layer(local_in_dim=self.hid_d, 
+                                               hid_dim=self.hid_d,
+                                               latent_dim=self.latent_global))
+                                            
+        self.local_1 = weight_norm(nn.Linear(self.hid_d, self.feats))
+   
+
+    def forward(self, z_local, mask):   # shape: [batch, points, feats]
+
+        #...local to global:
+        z_pooled_mean = (mask * z_local).mean(1, keepdim=False)
+        z_pooled_sum = z_local.sum(1, keepdim=False) / mask.sum(1, keepdim=False)  
+        z_pooledCAT = torch.cat([z_pooled_mean, z_pooled_sum], 1)
+        z_global = F.leaky_relu(self.loc_to_glob(z_pooledCAT)) 
+
+        #...global:
+        z_global = F.leaky_relu(self.global_0(z_global))
+        z_global = F.leaky_relu(self.global_1(z_global))        
+        z_global_in = z_global.clone()
+        
+        #...local:
+        z_local = F.leaky_relu(self.local_0(z_local))   
+        z_local_in = z_local.clone()
+
+        #...equivariant layers:
+        for i in range(self.equiv_layers):
+            z_global, z_local = self.epic_layers[i](z_global, z_local)   
+            z_global += z_global_in   
+            z_local += z_local_in    
+        
+        output = self.local_1(z_local)
+        
+        return output     #[batch, points, feats]
+
+
+
