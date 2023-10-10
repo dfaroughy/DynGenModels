@@ -6,6 +6,7 @@ import os
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 from dataclasses import dataclass
+import copy
 from copy import deepcopy
 
 from DynGenModels.trainer.utils import Train_Step, Validation_Step, RNGStateFixer
@@ -66,8 +67,17 @@ class DynGenModelTrainer:
         self.last_epoch_model = deepcopy(self.dynamics.net)    
         self.writer.close() 
 
-    def load(self, path: str=None, model='best'):
-        if model=='best': path = self.workdir + '/best_model.pth' if path is None else path
-        elif model=='last': path = self.workdir + '/last_epoch_model.pth' if path is None else path
-        path = self.workdir + model if path is None else path
-        self.dynamics.net.load_state_dict(torch.load(path))
+    def load(self, path: str=None):
+        path = self.workdir if path is None else path
+        self.dynamics.net.load_state_dict(torch.load(path + '/best_epoch_model.pth'))
+        self.best_epoch_model =  self.dynamics.net
+        self.dynamics.net.load_state_dict(torch.load(path + '/last_epoch_model.pth'))
+        self.last_epoch_model = self.dynamics.net
+
+    # def load(self, path: str=None, model='best'):
+    #     if model=='best': 
+    #         path = self.workdir + '/best_model.pth' if path is None else path
+    #     elif model=='last': 
+    #         path = self.workdir + '/last_epoch_model.pth' if path is None else path
+    #     path = self.workdir + model if path is None else path
+    #     self.dynamics.net.load_state_dict(torch.load(path))
