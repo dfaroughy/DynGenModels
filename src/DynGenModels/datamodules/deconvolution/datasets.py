@@ -2,6 +2,57 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 from dataclasses import dataclass
+from DynGenModels.datamodules.deconvolution.dataprocess import PreProcessGaussData
+
+
+class SimpleSmearedGaussDataset(Dataset):
+
+    ''' Creates 1D std gaussians  
+        applies gaussian smearing with a noise covariance depeding 
+        on the clean data via the mean of the log-normal distribution  
+    '''
+    
+    def __init__(self, configs: dataclass):
+        
+        self.scale = configs.log_norm_scale
+        self.num_points = configs.num_points
+
+        self.get_source_data()
+        self.get_truth_data()
+        self.get_covariance_data()
+        self.get_target_data()
+
+    def __getitem__(self, idx):
+        output = {}
+        output['smeared'] = self.smeared[idx]
+        output['source'] = self.source[idx]
+        output['covariance'] = self.covariance[idx]
+        output['mask'] = torch.ones_like(self.smeared[idx])
+        output['context'] = torch.empty_like(self.smeared[idx])
+        return output
+
+    def __len__(self):
+        return self.truth.size(0)
+    
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def get_truth_data(self):
+        self.truth = torch.randn(self.num_points)
+
+    def get_covariance_data(self):
+        s = torch.tensor(1 / (self.scale + 1e-6)) # this parametrization of the log-normal scale is to recover no smearing when scale = 0                     
+        log_normal = torch.distributions.log_normal.LogNormal(loc=self.truth, scale=s)  
+        self.covariance = log_normal.sample()
+
+    def get_target_data(self):
+        self.smeared = self.truth + self.covariance * torch.randn(self.num_points)  
+
+    def get_source_data(self):
+        self.source = torch.randn(self.num_points)
+
+
 
 class SmearedGaussDataset(torch.utils.data.Dataset):
 
@@ -71,8 +122,6 @@ class SmearedGaussDataset(torch.utils.data.Dataset):
                 data.append(sample)
 
             return torch.stack(data)
-
-from DynGenModels.datamodules.deconvolution.dataprocess import PreProcessGaussData
 
 class RectifiedSmearedGaussDataset(torch.utils.data.Dataset):
 

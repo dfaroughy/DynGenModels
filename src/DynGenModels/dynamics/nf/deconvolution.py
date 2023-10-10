@@ -14,15 +14,13 @@ class DeconvolutionNormFlows(NormalizingFlow):
 		"""
 		cov = batch['covariance']
 		smeared = batch['smeared'] 
-		# stats = batch['summary_stats']
+
 		cov = cov.repeat_interleave(self.num_mc_draws,0)            # ABC... -> AABBCC...
-		smeared = smeared.repeat_interleave(self.num_mc_draws,0)      # ABC... -> AABBCC...
+		smeared = smeared.repeat_interleave(self.num_mc_draws,0)    # ABC... -> AABBCC...
 		epsilon = torch.randn_like(smeared)
-		target = smeared + torch.bmm(cov, epsilon.unsqueeze(-1)).squeeze(-1)  # data + sigma * eps
+		target = smeared + (cov * epsilon if cov.dim()==1 else torch.bmm(cov, epsilon.unsqueeze(-1)).squeeze(-1)) # data + sigma * eps
+
+		print(target)
+
 		loss = - torch.mean(torch.logsumexp(torch.reshape(self.flow.log_prob(target),(-1, self.num_mc_draws)), dim=-1))
 		return torch.mean(loss)
-
-
-def transform(x, mu, sigma):
-	x = torch.log(1-x/x)
-	return (x - mu) / sigma
