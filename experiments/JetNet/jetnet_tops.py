@@ -13,7 +13,7 @@ configs = Configs(data_dir = '../../data/jetnet',
                   cuts = {'num_constituents': 30},
                   jet_types = 't',
                   data_split_fracs = [0.8, 0.2, 0.0],
-                  epochs = 5,
+                  epochs = 10000,
                   batch_size = 1024,
                   lr = 1e-3,
                   gradient_clip = 1.0,
@@ -24,7 +24,7 @@ configs = Configs(data_dir = '../../data/jetnet',
                   sigma = 1e-5,
                   solver='midpoint',
                   num_sampling_steps=500,
-                  device='cuda:1')
+                  device='cuda:0')
 
 #...set working directory for results:
 
