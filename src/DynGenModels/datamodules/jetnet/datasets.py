@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 from dataclasses import dataclass
-from jetnet.datasets import JetNet as JN
+from jetnet.datasets import JetNet 
 
 from DynGenModels.datamodules.jetnet.dataprocess import PreProcessJetNetData
 
@@ -11,6 +11,7 @@ class JetNetDataset(Dataset):
         self.data_dir = configs.data_dir
         self.num_particles = configs.num_particles
         self.jet_types = configs.jet_types if isinstance(configs.jet_types, list) else [configs.jet_types]
+        self.cuts = configs.cuts
         self.preprocess_methods = configs.preprocess 
         self.summary_stats = None
         
@@ -40,14 +41,19 @@ class JetNetDataset(Dataset):
                 "num_particles": self.num_particles,
                 "jet_features": ["type", "pt", "eta", "mass"]}
 
-        particle_data, jet_data = JN.getData(**args)
-        self.particles = torch.Tensor(particle_data[..., :-1])
-        self.mask = torch.Tensor(particle_data[..., -1])
-        self.jets = torch.Tensor(jet_data)
-        particles = PreProcessJetNetData(self.particles, self.mask, methods=self.preprocess_methods)
-        particles.preprocess()
-        self.summary_stats = particles.summary_stats
-        self.particles_preprocess = particles.features.clone()
+        particle_data, jet_data = JetNet.getData(**args)
+
+        particle_features= torch.Tensor(particle_data[..., :-1])
+        jet_features = torch.Tensor(jet_data)
+        mask = torch.Tensor(particle_data[..., -1])
+        data = PreProcessJetNetData(particle_features, jet_features, mask, cuts=self.cuts, methods=self.preprocess_methods)
+        data.apply_cuts()
+        self.particles = data.features.clone()
+        self.mask = data.mask.clone().squeeze()
+        self.jets = data.context.clone()
+        data.preprocess()
+        self.summary_stats = data.summary_stats
+        self.particles_preprocess = data.features.clone()
 
     def get_source_data(self):
         self.source = torch.randn_like(self.particles, dtype=torch.float32)

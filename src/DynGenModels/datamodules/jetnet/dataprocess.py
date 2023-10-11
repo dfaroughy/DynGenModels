@@ -5,17 +5,29 @@ import numpy as np
 class PreProcessJetNetData:
 
     def __init__(self, 
-                 data,
+                 particle_features,
+                 jet_features,
                  mask, 
+                 cuts: dict={'num_constituents': None},
                  methods: list=None
                  ):
         
-        self.features = data
+        self.features = particle_features
+        self.context = jet_features
         self.mask = mask[..., None]
         self.methods = methods
+        self.cuts = cuts
         self.summary_stats = {}
 
-    def preprocess(self):        
+    def apply_cuts(self):
+        if self.cuts['num_constituents'] is not None:
+            mask = self.mask.sum(dim=1).squeeze() == self.cuts['num_constituents']
+            self.features = self.features[mask]
+            self.context = self.context[mask]
+            self.mask = self.mask[mask]
+        else: pass
+
+    def preprocess(self):      
         if self.methods is not None:
             for method in self.methods:
                 method = getattr(self, method, None)
