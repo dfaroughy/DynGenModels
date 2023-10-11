@@ -100,9 +100,10 @@ class EPiC(nn.Module):
         self.epic = self.epic.to(self.device)
         return self.epic.forward(x, mask)
 
-# from https://github.com/uhh-pd-ml/EPiC-GAN/blob/main/models.py
+
 
 class EPiC_layer(nn.Module):
+    # from https://github.com/uhh-pd-ml/EPiC-GAN/blob/main/models.py
     def __init__(self, local_in_dim, hid_dim, latent_dim):
         super(EPiC_layer, self).__init__()
         self.fc_global1 = weight_norm(nn.Linear(int(2*hid_dim)+latent_dim, hid_dim)) 
