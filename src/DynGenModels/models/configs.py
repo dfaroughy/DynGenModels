@@ -25,6 +25,7 @@ class DeepSets_Configs(Training_Configs):
 @dataclass
 class EPiC_Configs(Training_Configs):
     model_name : str = 'EPiC'
+    pooling : str = 'mean_sum'
     dim_hidden : int = 128
     dim_global : int = 10
     num_epic_layers : int = 6
