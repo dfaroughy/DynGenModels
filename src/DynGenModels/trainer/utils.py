@@ -5,12 +5,13 @@ from torch.utils.data import DataLoader
 
 class Train_Step(nn.Module):
 
-    def __init__(self, loss_fn):
+    def __init__(self, loss_fn, gradient_clip=None):
         super(Train_Step, self).__init__()
         self.loss_fn = loss_fn
         self.loss = 0
         self.epoch = 0
         self.losses = []
+        self.gradient_clip = gradient_clip
 
     def update(self, dataloader: DataLoader, optimizer):
         self.loss = 0
@@ -20,9 +21,10 @@ class Train_Step(nn.Module):
             optimizer.zero_grad()
             loss_current = self.loss_fn(batch)
             loss_current.backward()
+            if self.gradient_clip is not None:
+                torch.nn.utils.clip_grad_norm_(optimizer.param_groups[0]['params'], self.gradient_clip)
             optimizer.step()  
             self.loss += loss_current.detach().cpu().numpy()
-        #self.loss = self.loss / len(dataloader.dataset)
         self.losses.append(self.loss) 
 
 class Validation_Step(nn.Module):

@@ -28,12 +28,13 @@ class DynGenModelTrainer:
         self.warmup_epochs = 0 if configs.warmup_epochs is None else configs.warmup_epochs
         self.print_epochs = 1 if configs.print_epochs is None else configs.print_epochs
         self.seed = configs.seed
+        self.gradient_clip = configs.gradient_clip
 
         os.makedirs(self.workdir+'/tensorboard', exist_ok=True)
         self.writer = SummaryWriter(self.workdir+'/tensorboard')  # tensorboard writer
 
     def train(self):
-        train = Train_Step(loss_fn=self.dynamics.loss)
+        train = Train_Step(loss_fn=self.dynamics.loss, gradient_clip=self.gradient_clip)
         valid = Validation_Step(loss_fn=self.dynamics.loss, 
                                 warmup_epochs=self.warmup_epochs, 
                                 print_epochs=self.print_epochs)
@@ -51,8 +52,7 @@ class DynGenModelTrainer:
                     terminate, improved = valid.checkpoint(early_stopping=self.early_stopping)
 
                 if improved:
-                    torch.save(self.dynamics.net.state_dict(), self.workdir + '/best_epoch_model.pth')
-                    self.best_epoch_model = deepcopy(self.dynamics.net)
+                    self.best_epoch_model = self.dynamics.net
 
                 if terminate: 
                     print("INFO: early stopping triggered! Reached maximum patience at {} epochs".format(epoch))
@@ -64,7 +64,8 @@ class DynGenModelTrainer:
             self.writer.add_scalar('Loss/train', train.loss, epoch)
 
         torch.save(self.dynamics.net.state_dict(), self.workdir + '/last_epoch_model.pth') 
-        self.last_epoch_model = deepcopy(self.dynamics.net)    
+        self.last_epoch_model = self.dynamics.net   
+ 
         self.writer.close() 
 
     def load(self, path: str=None):
@@ -74,10 +75,3 @@ class DynGenModelTrainer:
         self.dynamics.net.load_state_dict(torch.load(path + '/last_epoch_model.pth'))
         self.last_epoch_model = self.dynamics.net
 
-    # def load(self, path: str=None, model='best'):
-    #     if model=='best': 
-    #         path = self.workdir + '/best_model.pth' if path is None else path
-    #     elif model=='last': 
-    #         path = self.workdir + '/last_epoch_model.pth' if path is None else path
-    #     path = self.workdir + model if path is None else path
-    #     self.dynamics.net.load_state_dict(torch.load(path))

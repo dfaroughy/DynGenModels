@@ -12,4 +12,5 @@ class Training_Configs:
     warmup_epochs : int = None 
     print_epochs : int = None   
     seed : int = 12345
+    gradient_clip : float = None
 
