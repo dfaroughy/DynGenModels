@@ -9,9 +9,9 @@ import torch.nn.utils.weight_norm as weight_norm
 class DeepSets(nn.Module):
     ''' Wrapper class for the DeepSets architecture
     '''
-    def __init__(self, config):
+    def __init__(self, configs):
         super(DeepSets, self).__init__()
-        self.device = config.device
+        self.device = configs.DEVICE
         self.deepsets = _DeepSets(dim=config.dim_input, 
                                   dim_hidden=config.dim_hidden, 
                                   num_layers_1=config.num_layers_1,
@@ -74,7 +74,7 @@ class EPiC(nn.Module):
     '''
     def __init__(self, configs):
         super(EPiC, self).__init__()
-        self.device = configs.device
+        self.device = configs.DEVICE
 
         if configs.pooling=='mean_sum':
             self.epic = EPiC_Network(feats = configs.dim_input, 

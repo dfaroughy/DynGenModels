@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 @dataclass
 class NeuralODE_Sampler_Configs:
+    SAMPLER : str = 'NeuralODE'
     solver : str = 'euler'
     num_sampling_steps : int = 100
     sensitivity : str = 'adjoint'
@@ -10,4 +11,5 @@ class NeuralODE_Sampler_Configs:
 
 @dataclass
 class NormFlows_Sampler_Configs:
+    SAMPLER : str = 'nflows'
     num_gen_samples: int = 1000     

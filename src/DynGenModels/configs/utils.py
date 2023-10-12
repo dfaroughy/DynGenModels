@@ -20,7 +20,7 @@ def Configs(data: Type[dataclass], model: Type[dataclass], dynamics: Type[datacl
 
     def set_workdir(self, path: str, dir_name: str=None, save_config: bool=True):  # type: ignore
         time = datetime.now().strftime("%Y.%m.%d_%Hh%M")
-        dir_name = '{}.{}.{}.{}'.format( self.data_name, self.dynamics_name, self.model_name, time) if dir_name is None else dir_name
+        dir_name = '{}.{}.{}.{}'.format(self.DATA, self.DYNAMICS, self.MODEL, time) if dir_name is None else dir_name
         self.workdir = make_dir(path + '/' + dir_name, overwrite=True)
         if save_config: self.save()
 

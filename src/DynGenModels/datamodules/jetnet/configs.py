@@ -4,8 +4,8 @@ from typing import List, Dict
 
 @dataclass
 class DataConfigs:
+    DATA : str = 'JetNet'
     data_dir : str = '../../data/jetnet'
-    data_name : str = 'JetNet'
     features : List[str] = field(default_factory = lambda : ['eta_rel', 'phi_rel', 'pt_rel'])
     dim_input : int = 3
 

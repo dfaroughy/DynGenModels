@@ -20,16 +20,16 @@ class _MLP(torch.nn.Module):
 class MLP(nn.Module):
     ''' Wrapper class for the MLP architecture
     '''
-    def __init__(self, config):
+    def __init__(self, configs):
         super(MLP, self).__init__()
-        self.device = config.device
-        self.mlp = _MLP(dim=config.dim_input, 
+        self.device = configs.DEVICE
+        self.mlp = _MLP(dim=configs.dim_input, 
                        out_dim=None,
-                       w=config.dim_hidden, 
-                       num_layers=config.num_layers,
+                       w=configs.dim_hidden, 
+                       num_layers=configs.num_layers,
                        time_varying=True)
                         
-    def forward(self, t, x, context=None, mask=None):
+    def forward(self, t, x, context=None, mask=None, sampling=False):
         x = torch.cat([x, t], dim=-1)
         x = x.to(self.device)
         self.mlp = self.mlp.to(self.device)
@@ -72,17 +72,17 @@ class _ResNet(torch.nn.Module):
 class ResNet(nn.Module):
     ''' Wrapper class for the ResNet architecture
     '''
-    def __init__(self, config):
+    def __init__(self, configs):
         super(ResNet, self).__init__()
-        self.device = config.device
-        self.resnet = _ResNet(dim=config.dim_input, 
+        self.device = configs.DEVICE
+        self.resnet = _ResNet(dim=configs.dim_input, 
                             out_dim=None,
-                            w=config.dim_hidden, 
-                            num_blocks=config.num_blocks,
-                            num_layers_per_block=config.num_block_layers,
+                            w=configs.dim_hidden, 
+                            num_blocks=configs.num_blocks,
+                            num_layers_per_block=configs.num_block_layers,
                             time_varying=True)
                 
-    def forward(self, t, x, context=None, mask=None):
+    def forward(self, t, x, context=None, mask=None, sampling=False):
         x = torch.cat([x, t], dim=-1)
         x = x.to(self.device)
         self.resnet = self.resnet.to(self.device)

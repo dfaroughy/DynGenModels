@@ -12,6 +12,8 @@ class ToysDataLoader:
         self.datasets = datasets        
         self.fracs = configs.data_split_fracs
         self.batch_size = configs.batch_size
+        self.num_workers = configs.num_workers
+        self.pin_memory = configs.pin_memory
         self.dataloader()
 
     def train_val_test_split(self, shuffle=False):
@@ -42,9 +44,9 @@ class ToysDataLoader:
         print("INFO: train/val/test split ratios: {}/{}/{}".format(self.fracs[0], self.fracs[1], self.fracs[2]))
         
         train, valid, test = self.train_val_test_split(shuffle=True)
-        self.train = DataLoader(dataset=train, batch_size=self.batch_size, shuffle=True)
-        self.valid = DataLoader(dataset=valid,  batch_size=self.batch_size, shuffle=False) if valid is not None else None
-        self.test = DataLoader(dataset=test,  batch_size=self.batch_size, shuffle=True) if test is not None else None
+        self.train = DataLoader(dataset=train, batch_size=self.batch_size, num_workers=self.num_workers, pin_memory=self.pin_memory, shuffle=True)
+        self.valid = DataLoader(dataset=valid,  batch_size=self.batch_size, num_workers=self.num_workers, pin_memory=self.pin_memory, shuffle=False) if valid is not None else None
+        self.test = DataLoader(dataset=test,  batch_size=self.batch_size, num_workers=self.num_workers, pin_memory=self.pin_memory, shuffle=True) if test is not None else None
 
         print('INFO: train size: {}, validation size: {}, testing sizes: {}'.format(len(self.train.dataset),  # type: ignore
                                                                                     len(self.valid.dataset if valid is not None else []),  # type: ignore

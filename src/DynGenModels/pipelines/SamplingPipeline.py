@@ -34,7 +34,7 @@ class FlowMatchPipeline:
         self.sensitivity = configs.sensitivity if sensitivity is None else sensitivity
         self.atol = configs.atol if atol is None else atol
         self.rtol = configs.rtol if rtol is None else rtol
-        self.device = configs.device
+        self.device = configs.DEVICE
 
         self.time_steps = torch.linspace(self.t0, self.t1, self.num_sampling_steps, device=self.device)
         self.trajectories = self.ODEsolver()
@@ -103,7 +103,7 @@ class NormFlowPipeline:
 
     @torch.no_grad()
     def sampler(self):
-        return self.model.dynamics.flow.sample(self.num_gen_samples).detach().cpu() 
+        return self.net.sample(self.num_gen_samples).detach().cpu() 
 
     def postprocess(self, samples):
         sample = self.postprocessor(data=samples, summary_stats=self.stats, methods=self.postprocess_methods)
