@@ -11,12 +11,13 @@ from copy import deepcopy
 class NormalizingFlow:
 
     def __init__(self, net, configs: dataclass):
+        self.device = configs.DEVICE
         self.num_transforms = configs.num_transforms
         self.flow_net = net
         self.permutation = ReversePermutation(features=configs.dim_input)
         self.transforms()
-        self.flows = CompositeTransform(self.transforms)
-        self.base_distribution = StandardNormal(shape=[configs.dim_input])
+        self.flows = CompositeTransform(self.transforms).to(configs.DEVICE)
+        self.base_distribution = StandardNormal(shape=[configs.dim_input]).to(configs.DEVICE)
         self.net = Flow(self.flows, self.base_distribution)
 
     def transforms(self):
@@ -30,7 +31,7 @@ class NormalizingFlow:
     def loss(self, batch):
         ''' Negative Log-probability loss
         '''
-        target = batch['target']
+        target = batch['target'].to(self.device)
         loss = - self.net.log_prob(target)
         return torch.mean(loss)
 

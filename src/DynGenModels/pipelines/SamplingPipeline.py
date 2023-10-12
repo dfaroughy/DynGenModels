@@ -89,6 +89,7 @@ class NormFlowPipeline:
                  ):
         
         self.model = trained_model
+        self.device = configs.DEVICE
         self.num_gen_samples = configs.num_gen_samples if num_gen_samples is None else num_gen_samples
         self.postprocessor = postprocessor
         self.net = self.model.best_epoch_model if best_epoch_model else self.model.last_epoch_model

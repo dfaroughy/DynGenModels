@@ -33,6 +33,7 @@ class MAFPiecewiseRQS(nn.Module):
 	'''
 	def __init__(self, configs):
 		super(MAFPiecewiseRQS, self).__init__() 
+		self.device = configs.DEVICE
 		self.maf = MaskedPiecewiseRationalQuadraticAutoregressiveTransform(
 						features=configs.dim_input,
 						hidden_features=configs.dim_hidden,
@@ -45,9 +46,13 @@ class MAFPiecewiseRQS(nn.Module):
 						use_batch_norm=configs.use_batch_norm)
                 
 	def forward(self, x, context=None):
+		x = x.to(self.device)
+		self.maf = self.maf.to(self.device)
 		return self.maf.forward(x, context)
 
 	def inverse(self, x, context=None):
+		x = x.to(self.device)
+		self.maf = self.maf.to(self.device)
 		return self.maf.inverse(x, context)
 	
 
