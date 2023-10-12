@@ -10,7 +10,7 @@ configs = Configs(dataset = '../data/fermi/fermi_data_galactic_coord.npy',
                   preprocess=['normalize', 'logit_transform', 'standardize'], 
                   cuts = {'theta': [-10., 10.], 'phi': [4., 10.], 'energy': [1000, 2000]},
                   data_split_fracs = [0.8, 0.2, 0.0],
-                  epochs = 10000,
+                  EPOCHS = 10000,
                   batch_size = 2048,
                   lr = 1e-3,
                   dim_hidden = 512,
@@ -19,7 +19,7 @@ configs = Configs(dataset = '../data/fermi/fermi_data_galactic_coord.npy',
                   sigma = 0.0,
                   solver = 'midpoint',
                   num_sampling_steps = 100,
-                  device = 'cuda:1')
+                  DEVICE = 'cuda:1')
 
 #...set working directory for results:
 
