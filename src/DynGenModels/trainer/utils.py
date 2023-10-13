@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from dataclasses import dataclass
+from DynGenModels.utils.plots import plot_loss
 
 class Train_Step(nn.Module):
 
@@ -35,7 +36,6 @@ class Validation_Step(nn.Module):
         self.epoch = 0
         self.patience = 0
         self.loss_min = np.inf
-        self.print_epoch = print_epochs
         self.min_epochs = min_epochs
         self.losses = []
         
@@ -62,24 +62,9 @@ class Validation_Step(nn.Module):
 
         if self.patience >= early_stopping: 
             terminate = True
-        if self.epoch % self.print_epoch == 1:
-            print("\t test loss: {}  (min loss: {})".format(self.loss, self.loss_min))
 
         return terminate, improved
 
-
-class RNGStateFixer:
-    def __init__(self, seed):
-        self.seed = seed
-        self.saved_rng_state = None
-    def __enter__(self):
-        self.saved_rng_state = torch.get_rng_state()
-        torch.manual_seed(self.seed)
-        return 
-    def __exit__(self, *args):
-        torch.set_rng_state(self.saved_rng_state)
-        return
-    
 
 class Optimizer:
     def __init__(self, configs: dataclass):
@@ -90,63 +75,63 @@ class Optimizer:
         optim_args = {'lr': self.configs.lr, 'weight_decay': self.configs.weight_decay}
 
         if self.configs.optimizer == 'Adam':
-            if hasattr(self.configs, 'betas'):
-                optim_args['betas'] = self.configs.betas
-            if hasattr(self.configs, 'eps'):
-                optim_args['eps'] = self.configs.eps
-            if hasattr(self.configs, 'amsgrad'):
-                optim_args['amsgrad'] = self.configs.amsgrad
+            if hasattr(self.configs, 'betas'): optim_args['betas'] = self.configs.optimizer_betas
+            if hasattr(self.configs, 'eps'): optim_args['eps'] = self.configs.optimizer_eps
+            if hasattr(self.configs, 'amsgrad'): optim_args['amsgrad'] = self.configs.optimizer_amsgrad
             return torch.optim.Adam(parameters, **optim_args)
         
         elif self.configs.optimizer == 'AdamW':
-            if hasattr(self.configs, 'betas'):
-                optim_args['betas'] = self.configs.betas
-            if hasattr(self.configs, 'eps'):
-                optim_args['eps'] = self.configs.eps
-            if hasattr(self.configs, 'amsgrad'):
-                optim_args['amsgrad'] = self.configs.amsgrad
+            if hasattr(self.configs, 'betas'): optim_args['betas'] = self.configs.optimizer_betas
+            if hasattr(self.configs, 'eps'): optim_args['eps'] = self.configs.optimizer_eps
+            if hasattr(self.configs, 'amsgrad'): optim_args['amsgrad'] = self.configs.optimizer_amsgrad
             return torch.optim.AdamW(parameters, **optim_args)
         
         else:
             raise ValueError(f"Unsupported optimizer: {self.configs.optimizer}")
         
     def clip_gradients(self, optimizer):
-        if self.configs.gradient_clip:
-            torch.nn.utils.clip_grad_norm_(optimizer.param_groups[0]['params'], self.configs.gradient_clip)
+        if self.configs.gradient_clip: torch.nn.utils.clip_grad_norm_(optimizer.param_groups[0]['params'], self.configs.gradient_clip)
 
     def __call__(self, parameters):
-
         optimizer = self.get_optimizer(parameters)
-
         #...override the optimizer.step() to include gradient clipping
         original_step = optimizer.step
 
         def step_with_clipping(closure=None):
             self.clip_gradients(optimizer)
-            original_step(closure)
-            
+            original_step(closure)          
         optimizer.step = step_with_clipping
         return optimizer
-    
 
-# class Scheduler:
-#     def __init__(self, configs: dataclass):
-#         self.configs = configs
+class Scheduler:
+    def __init__(self, configs: dataclass):
+        self.configs = configs
 
-#     def _get_scheduler(self, optimizer):
-#         if self.configs.scheduler == 'CosineAnnealingLR':
-#             return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.configs.T_max)
+    def get_scheduler(self, optimizer):
+        if self.configs.scheduler == 'CosineAnnealingLR': return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.configs.scheduler_T_max)
+        elif self.configs.scheduler == 'StepLR': return torch.optim.lr_scheduler.StepLR(optimizer, step_size=self.configs.scheduler_step_size, gamma=self.configs.scheduler_gamma)
+        elif self.configs.scheduler == 'ExponentialLR': return torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.configs.scheduler_gamma)
+        elif self.configs.scheduler is None: return NoScheduler(optimizer)
+        else: raise ValueError(f"Unsupported scheduler: {self.configs.scheduler}")
 
-#         elif self.configs.scheduler == 'StepLR':
-#             return torch.optim.lr_scheduler.StepLR(optimizer, step_size=self.configs.step_size, gamma=self.configs.gamma)
+    def __call__(self, optimizer):
+        return self.get_scheduler(optimizer)
 
-#         elif self.configs.scheduler == 'ExponentialLR':
-#             return torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.configs.gamma)
+class NoScheduler:
+    def __init__(self, optimizer): pass
+    def step(self): pass    
 
-#         else:
-#             raise ValueError(f"Unsupported scheduler: {self.configs.scheduler}")
 
-#     def __call__(self, optimizer):
-#         return self._get_scheduler(optimizer)
-
+class RNGStateFixer:
+    def __init__(self, seed):
+        self.seed = seed
+        self.saved_rng_state = None
+    def __enter__(self):
+        if self.seed is not None: 
+            self.saved_rng_state = torch.get_rng_state()
+            torch.manual_seed(self.seed)
+        return     
+    def __exit__(self, *args):
+        if self.seed is not None: torch.set_rng_state(self.saved_rng_state)
+        return
     

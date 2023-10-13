@@ -8,6 +8,7 @@ class NeuralODE_Sampler_Configs:
     sensitivity : str = 'adjoint'
     atol : float = 1e-4
     rtol : float = 1e-4
+    num_gen_samples: int = 10000 
 
 @dataclass
 class NormFlows_Sampler_Configs:

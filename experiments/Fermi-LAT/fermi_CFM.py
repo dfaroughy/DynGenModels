@@ -1,25 +1,30 @@
 import torch
-import numpy as np
-import matplotlib.pyplot as plt 
 
 from DynGenModels.trainer.trainer import DynGenModelTrainer
 from DynGenModels.configs.fermi_configs import FermiGCE_ResNet_CondFlowMatch as Configs
 
-configs = Configs(dataset = '../data/fermi/fermi_data_galactic_coord.npy',
+configs = Configs(DATA ='FermiGCE',
+                  dataset = '../../data/fermi/fermi_data_galactic_coord.npy',
                   features = ['theta', 'phi', 'energy'],
-                  preprocess=['normalize', 'logit_transform', 'standardize'], 
-                  cuts = {'theta': [-10., 10.], 'phi': [4., 10.], 'energy': [1000, 2000]},
+                  preprocess = ['normalize', 'logit_transform', 'standardize'],
+                  cuts = {'theta': [-10., 10.], 'phi': [-5., 10.], 'energy': [1000, 2000]},
                   data_split_fracs = [0.8, 0.2, 0.0],
                   EPOCHS = 10000,
-                  batch_size = 2048,
-                  lr = 1e-3,
-                  dim_hidden = 512,
-                  num_blocks = 5,
-                  num_block_layers = 2,
+                  batch_size = 15000,
+                  print_epochs = 10,
+                  early_stopping = 120,
+                  min_epochs = 100,
+                  lr = 1e-4,
+                  dim_hidden = 256, 
+                  DEVICE = 'cuda:1',
+                  optimizer = 'Adam',
+                  fix_seed = 12345,
+                  num_blocks = 10,
+                  num_block_layers = 3,
                   sigma = 0.0,
                   solver = 'midpoint',
-                  num_sampling_steps = 100,
-                  DEVICE = 'cuda:1')
+                  num_sampling_steps = 500
+                  )
 
 #...set working directory for results:
 
@@ -48,34 +53,42 @@ from DynGenModels.pipelines.SamplingPipeline import FlowMatchPipeline
 from DynGenModels.datamodules.fermi.dataprocess import PostProcessFermiData 
 
 pipeline = FlowMatchPipeline(trained_model=cfm, 
-                             source_input=torch.randn(50000, 3),
+                             source_input=torch.randn(fermi.target.shape[0], configs.dim_input),
                              configs=configs, 
                              postprocessor=PostProcessFermiData,
                              best_epoch_model=False)
 
 pipeline_best = FlowMatchPipeline(trained_model=cfm, 
-                             source_input=torch.randn(50000, 3),
+                             source_input=torch.randn(fermi.target.shape[0], configs.dim_input),
                              configs=configs, 
                              postprocessor=PostProcessFermiData,
                              best_epoch_model=True)
 
-coord = [r'$\theta$', r'$\phi$', r'$E$']
-color=['gold', 'darkblue', 'darkred']
 
-fig, ax = plt.subplots(1, 3, figsize=(9, 3))
-for i in range(3):
-    ax[i].hist(fermi.target[..., i], bins=100, color='silver', density=True)
-    ax[i].hist(pipeline.target[..., i], bins=100, color=color[i], histtype='step', density=True)
-    ax[i].hist(pipeline_best.target[..., i], bins=100, color=color[i], histtype='step', ls=':',density=True)
-    ax[i].set_xlabel(coord[i])
-plt.tight_layout()
-plt.savefig(configs.workdir + '/fermi_coords.pdf')
+#...plot results:
 
-fig, ax = plt.subplots(1, 3, figsize=(9, 3))
-for i, j in [(0,1), (1,2), (2,0)]:
-    ax[i].hexbin(pipeline.target[..., i], pipeline.target[..., j], cmap='plasma', gridsize=200)
-    ax[i].set_xlabel(coord[i])
-    ax[i].set_ylabel(coord[j])
-plt.tight_layout()
-plt.show()
-plt.savefig(configs.workdir + '/fermi_coords_2D.pdf')
+from utils import results_plots, results_2D_plots
+
+results_plots(data=fermi.target, 
+              generated=pipeline.target, 
+              comparator='pull',
+              model = 'Flow-Matching', 
+              save_path=configs.workdir + '/fermi_features.pdf', 
+              bins=300, 
+              features=[r'$\theta$', r'$\phi$', r'$E$ [GeV]'])
+
+results_plots(data=fermi.target, 
+              generated=pipeline_best.target, 
+              comparator='pull',
+              model = 'Flow-Matching', 
+              save_path=configs.workdir + '/fermi_features_best.pdf', 
+              bins=300, 
+              features=[r'$\theta$', r'$\phi$', r'$E$ [GeV]'])
+
+results_2D_plots(pipeline.target,
+                 save_path=configs.workdir + '/fermi_features_2D.pdf',  
+                 gridsize=200)
+
+results_2D_plots(pipeline_best.target,
+                 save_path=configs.workdir + '/fermi_features_2D_best.pdf',  
+                 gridsize=200)

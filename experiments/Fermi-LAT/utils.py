@@ -8,6 +8,7 @@ def results_plots(data,
                   comparator='ratio', 
                   save_path=None, 
                   bins=100, 
+                  model='generated',
                   features=[r'$\theta$', r'$\phi$', r'$E$ [GeV]'], 
                   num_particles=None):
     
@@ -20,13 +21,14 @@ def results_plots(data,
         ax = fig.add_subplot(gs[idx])
         h1, Bins, _ = ax.hist(data[..., idx].flatten()[:num_particles], bins=bins, color='silver', label='Fermi data')
         if generated is not None:
-            h2, _, _ = ax.hist(generated[..., idx].flatten()[:num_particles], bins=bins, color=['gold', 'darkblue', 'darkred'][idx], histtype='step', lw=0.75, label='MAF samples')
+            h2, _, _ = ax.hist(generated[..., idx].flatten()[:num_particles], bins=bins, color=['gold', 'darkblue', 'darkred'][idx], histtype='step', lw=0.75, label=model)
             ax.set_xticklabels([])
             ax.set_xticks([])
             for tick in ax.yaxis.get_major_ticks():
                tick.label.set_fontsize(8)
         else: ax.set_xlabel(feature)
-        
+        ax.legend(loc='upper right', fontsize=8)
+
         if generated is not None:
 
             if comparator=='ratio':
@@ -72,11 +74,18 @@ def results_plots(data,
     plt.show()
 
 
-def results_2D_plots(data, features=[r'$\theta$', r'$\phi$', r'$E$ [GeV]'], gridsize=500, cmap='plasma'):
-    fig, ax = plt.subplots(1, 3, figsize=(9, 3))
-    for i, j in [(0,1), (1,2), (2,0)]:
-        ax[i].hexbin(data[..., i], data[..., j], cmap=cmap, gridsize=grisize)
-        ax[i].set_xlabel(features[i])
-        ax[i].set_ylabel(features[j])
+def results_2D_plots(data, save_path=None, features=[r'$\theta$', r'$\phi$', r'$E$ [GeV]'], gridsize=500, cmap='plasma'):
+    fig, ax = plt.subplots(1, 3, figsize=(14, 4.667))
+    ax[0].hexbin(data[..., 1], data[..., 0], cmap=cmap, gridsize=gridsize)
+    ax[0].set_xlabel(features[1])
+    ax[0].set_ylabel(features[0])
+    ax[1].hexbin(data[..., 0], data[..., 2], cmap=cmap, gridsize=gridsize)
+    ax[1].set_xlabel(features[0])
+    ax[1].set_ylabel(features[2])
+    ax[2].hexbin(data[..., 1], data[..., 2], cmap=cmap, gridsize=gridsize)
+    ax[2].set_xlabel(features[1])
+    ax[2].set_ylabel(features[2])
+    if save_path is not None:
+        plt.savefig(save_path)
     plt.tight_layout()
     plt.show()
