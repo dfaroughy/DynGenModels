@@ -9,7 +9,7 @@ configs = Configs(# data params:
                  features = ['theta', 'phi', 'energy'],
                  preprocess = ['normalize', 'logit_transform', 'standardize'],
                  cuts = {'theta': [-10., 10.], 'phi': [-5., 10.], 'energy': [1000, 2000]},
-                 data_split_fracs = [0.8, 0.0, 0.2],
+                 data_split_fracs = [0.8, 0.2, 0.0],
                  # training params:
                  DEVICE = 'cuda:3',
                  EPOCHS = 10,
