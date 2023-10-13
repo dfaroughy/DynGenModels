@@ -35,7 +35,6 @@ class FlowMatchPipeline:
         self.atol = configs.atol if atol is None else atol
         self.rtol = configs.rtol if rtol is None else rtol
         self.device = configs.DEVICE
-
         self.time_steps = torch.linspace(self.t0, self.t1, self.num_sampling_steps, device=self.device)
         self.trajectories = self.ODEsolver()
 
