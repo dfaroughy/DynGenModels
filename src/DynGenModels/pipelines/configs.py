@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+""" Default configurations for sampling pipelines.
+"""
+
 @dataclass
 class NeuralODE_Sampler_Configs:
     SAMPLER : str = 'NeuralODE'

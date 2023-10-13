@@ -2,6 +2,9 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import List, Dict
 
+""" Default configurations for Gaia datasets.
+"""
+
 @dataclass
 class Gaia_Configs:
     DATA : str = 'Gaia'

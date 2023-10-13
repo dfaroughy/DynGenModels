@@ -2,6 +2,10 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import List, Dict, Tuple
 
+
+""" Default configurations for deconvolution datasets.
+"""
+
 @dataclass
 class Deconvolution_Gauss1D_Configs:
     DATA : str = 'Gauss1D'

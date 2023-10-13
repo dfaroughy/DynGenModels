@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+""" Default configurations for continious normalizing flow dynamics.
+"""
+
 @dataclass
 class FlowMatch_Configs:
     DYNAMICS : str = 'FlowMatch'

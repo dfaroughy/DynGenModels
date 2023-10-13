@@ -2,6 +2,9 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import List, Dict
 
+""" Default configurations for Fermi-LAT datasets.
+"""
+
 @dataclass
 class FermiGCE_Configs:
     DATA : str = 'FermiGCE'

@@ -1,6 +1,9 @@
 from typing import List
 from dataclasses import dataclass, field
 
+""" Default configurations for training.
+"""
+
 @dataclass
 class Optimizer_Configs:
     DEVICE : str = 'cpu'

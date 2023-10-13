@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from DynGenModels.trainer.configs import Training_Configs
 
+""" Default configurations for models.
+"""
+
 @dataclass
 class MLP_Configs(Training_Configs):
     MODEL : str = 'MLP'

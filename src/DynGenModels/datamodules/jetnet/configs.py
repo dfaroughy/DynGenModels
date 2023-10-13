@@ -2,6 +2,9 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import List, Dict
 
+""" Default configurations for JetNet datasets.
+"""
+
 @dataclass
 class DataConfigs:
     DATA : str = 'JetNet'
