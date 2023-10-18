@@ -68,7 +68,7 @@ class DynGenModelTrainer:
                 break
             
         self._save_last_epoch_model()
-        self._save_best_epoch_model(~bool(self.dataloader.valid)) # best = last epoch if there is no validation, needed as a placeholder for pipeline
+        self._save_best_epoch_model(not bool(self.dataloader.valid)) # best = last epoch if there is no validation, needed as a placeholder for pipeline
         self.plot_loss(valid_loss=valid.losses, train_loss=train.losses)
         self.logger.close()
         self.writer.close() 

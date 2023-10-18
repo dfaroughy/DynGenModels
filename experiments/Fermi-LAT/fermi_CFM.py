@@ -10,11 +10,11 @@ configs = Configs(# data params:
                   cuts = {'theta': [-10., 10.], 'phi': [-5., 10.], 'energy': [1000, 2000]},
                   data_split_fracs = [0.75, 0.25, 0.0],
                   # training params:
-                  DEVICE = 'cpu',
-                  EPOCHS = 100,
+                  DEVICE = 'cuda:0',
+                  EPOCHS = 1000,
                   batch_size = 16000,
-                  print_epochs = 10,
-                  early_stopping = 100,
+                  print_epochs = 20,
+                  early_stopping = 200,
                   min_epochs = 1000,
                   lr = 1e-3,
                   optimizer = 'Adam',
@@ -43,6 +43,8 @@ from DynGenModels.datamodules.fermi.datasets import FermiDataset
 from DynGenModels.datamodules.fermi.dataloader import FermiDataLoader 
 from DynGenModels.models.deep_nets import MLP
 from DynGenModels.dynamics.cnf.flowmatch import FlowMatching
+
+# print(MLP(configs))
 
 fermi = FermiDataset(configs)
 fm = DynGenModelTrainer(dynamics = FlowMatching(configs),
