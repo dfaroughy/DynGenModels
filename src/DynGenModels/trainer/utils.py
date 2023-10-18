@@ -138,9 +138,12 @@ class NoScheduler:
     def step(self): pass    
 
 
+import torch
+import numpy as np
+
 class RNGStateFixer:
     """
-    Context manager to fix the RNG state using a given seed.
+    Context manager to fix the RNG state using a given seed for PyTorch, CUDA, and numpy.
     Restores the original state after exiting the context.
     
     Attributes:
@@ -150,14 +153,53 @@ class RNGStateFixer:
     def __init__(self, seed):
         self.seed = seed
         self.saved_rng_state = None
+        self.saved_cuda_rng_state = None
+        self.saved_numpy_rng_state = None
+
     def __enter__(self):
         if self.seed is not None: 
+            #...save PyTorch RNG state and set the new seed
             self.saved_rng_state = torch.get_rng_state()
             torch.manual_seed(self.seed)
+            #...save CUDA RNG state (for PyTorch) and set the new seed
+            if torch.cuda.is_available():
+                self.saved_cuda_rng_state = torch.cuda.get_rng_state_all()
+                torch.cuda.manual_seed_all(self.seed)
+            #...save numpy RNG state and set the new seed
+            self.saved_numpy_rng_state = np.random.get_state()
+            np.random.seed(self.seed)
         return     
+
     def __exit__(self, *args):
-        if self.seed is not None: torch.set_rng_state(self.saved_rng_state)
+        if self.seed is not None:
+            torch.set_rng_state(self.saved_rng_state)
+            if torch.cuda.is_available():
+                torch.cuda.set_rng_state_all(self.saved_cuda_rng_state)
+            np.random.set_state(self.saved_numpy_rng_state)
         return
+
+
+
+# class RNGStateFixer:
+#     """
+#     Context manager to fix the RNG state using a given seed.
+#     Restores the original state after exiting the context.
+    
+#     Attributes:
+#     - seed: Seed for the RNG.
+#     """
+
+#     def __init__(self, seed):
+#         self.seed = seed
+#         self.saved_rng_state = None
+#     def __enter__(self):
+#         if self.seed is not None: 
+#             self.saved_rng_state = torch.get_rng_state()
+#             torch.manual_seed(self.seed)
+#         return     
+#     def __exit__(self, *args):
+#         if self.seed is not None: torch.set_rng_state(self.saved_rng_state)
+#         return
 
 
 class Logger:
@@ -193,8 +235,6 @@ class Logger:
     def logfile_and_console(self, message):
         self.logfile.info(message)
         self.console.info(message)
-    
-    
 
     def close(self):
         if self.fh:

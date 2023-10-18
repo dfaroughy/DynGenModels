@@ -10,8 +10,8 @@ class _MLP(torch.nn.Module):
         super().__init__()
         self.time_varying = time_varying
         if out_dim is None: out_dim = dim
-        layers = [torch.nn.Linear(dim + (1 if time_varying else 0), w), torch.nn.SELU()]
-        for _ in range(num_layers-1): layers.extend([torch.nn.Linear(w, w), torch.nn.SELU()])
+        layers = [torch.nn.Linear(dim + (1 if time_varying else 0), w), torch.nn.GELU()]
+        for _ in range(num_layers-1): layers.extend([torch.nn.Linear(w, w), torch.nn.GELU()])
         layers.append(torch.nn.Linear(w, out_dim))
         self.net = torch.nn.Sequential(*layers)
     def forward(self, x):
