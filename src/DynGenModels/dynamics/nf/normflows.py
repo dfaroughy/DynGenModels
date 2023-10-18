@@ -1,24 +1,32 @@
 import torch
-
-from nflows.utils import torchutils
 from nflows.flows.base import Flow
 from nflows.transforms.base import CompositeTransform
 from nflows.distributions.normal import StandardNormal
-from nflows.transforms.permutations import ReversePermutation
+from nflows.transforms.permutations import Permutation
 from dataclasses import dataclass
 from copy import deepcopy
 
 class NormalizingFlow:
 
     def __init__(self, net, configs: dataclass):
+        self.dim = configs.dim_input
         self.device = configs.DEVICE
         self.num_transforms = configs.num_transforms
         self.flow_net = net
-        self.permutation = ReversePermutation(features=configs.dim_input)
+        self.get_permutation(configs.permutation)
         self.transforms()
         self.flows = CompositeTransform(self.transforms).to(configs.DEVICE)
         self.base_distribution = StandardNormal(shape=[configs.dim_input]).to(configs.DEVICE)
         self.net = Flow(self.flows, self.base_distribution)
+
+    def get_permutation(self, perm):
+        k = list(range(self.dim))
+        if 'cycle' in perm:
+            N = int(perm.split('-')[0]) 
+            assert N < self.dim 
+            self.permutation = Permutation(torch.tensor(k[-N:] + k[:-N]))
+        elif 'reverse' in perm:
+            self.permutation = Permutation(torch.tensor(k[::-1]))
 
     def transforms(self):
         self.transforms = []

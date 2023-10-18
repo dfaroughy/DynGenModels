@@ -5,7 +5,7 @@ import matplotlib.gridspec as gridspec
 
 def results_plots(data, 
                   generated=None, 
-                  comparator='ratio', 
+                  comparator=None, 
                   save_path=None, 
                   bins=100, 
                   model='generated',
@@ -19,9 +19,9 @@ def results_plots(data,
     
     for idx, feature in enumerate(features):
         ax = fig.add_subplot(gs[idx])
-        h1, Bins, _ = ax.hist(data[..., idx].flatten()[:num_particles], bins=bins, color='silver', label='Fermi data')
+        h1, Bins, _ = ax.hist(data[..., idx][:num_particles], bins=bins, color='silver', label='Fermi data')
         if generated is not None:
-            h2, _, _ = ax.hist(generated[..., idx].flatten()[:num_particles], bins=bins, color=['gold', 'darkblue', 'darkred'][idx], histtype='step', lw=0.75, label=model)
+            h2, _, _ = ax.hist(generated[..., idx][:num_particles], bins=bins, color=['gold', 'darkblue', 'darkred'][idx], histtype='step', lw=0.75, label=model)
             ax.set_xticklabels([])
             ax.set_xticks([])
             for tick in ax.yaxis.get_major_ticks():

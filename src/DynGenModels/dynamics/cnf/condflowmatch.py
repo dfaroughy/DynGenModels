@@ -4,11 +4,10 @@ from dataclasses import dataclass
 
 class SimplifiedCondFlowMatching:
 
-	def __init__(self, net, config: dataclass):
+	def __init__(self, config: dataclass):
 		self.sigma_min = config.sigma
 		self.t0 = config.t0
 		self.t1 = config.t1
-		self.net = net
 
 	def z(self, batch):
 		""" conditional variable
@@ -39,14 +38,14 @@ class SimplifiedCondFlowMatching:
 		self.conditional_probability_path()
 		self.path = self.mean + self.std * torch.randn_like(self.x1)
 
-	def loss(self, batch):
+	def loss(self, model, batch):
 		""" conditional flow-mathcing/score-matching MSE loss
 		"""
 		self.z(batch)
 		self.conditional_vector_fields()
 		self.sample_time() 
 		self.sample_path()
-		v = self.net(x=self.path, t=self.t, mask=batch['mask'])
+		v = model(x=self.path, t=self.t, mask=batch['mask'])
 		u = self.u.to(v.device)
 		loss = torch.square(v - u)
 		return torch.mean(loss)

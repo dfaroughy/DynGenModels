@@ -24,12 +24,14 @@ class DynGenModelTrainer:
 
     def __init__(self, 
                  dynamics,
+                 model,
                  dataloader: DataLoader,
                  configs: dataclass):
     
         #...configs:
         self.configs = configs
         self.dynamics = dynamics
+        self.model = model
         self.dataloader = dataloader
         self.workdir = Path(configs.workdir)
         self.epochs = configs.EPOCHS
@@ -45,16 +47,17 @@ class DynGenModelTrainer:
 
     def train(self):
         self.logger.logfile_and_console("Beginning training...")
-        train = Train_Step(loss_fn=self.dynamics.loss)
-        valid = Validation_Step(loss_fn=self.dynamics.loss, min_epochs=self.min_epochs)
-        optimizer = Optimizer(self.configs)(self.dynamics.net.parameters())
+        train = Train_Step()
+        valid = Validation_Step()
+        optimizer = Optimizer(self.configs)(self.model.parameters())
         scheduler = Scheduler(self.configs)(optimizer)
-        self.logger.logfile_and_console('number of training parameters: {}'.format(sum(p.numel() for p in self.dynamics.net.parameters())))
+        self.logger.logfile_and_console('number of training parameters: {}'.format(sum(p.numel() for p in self.model.parameters())))
+        self.logger.logfile_and_console('validation set to: {}'.format(bool(self.dataloader.valid)))
         
         for epoch in tqdm(range(self.epochs), desc="epochs"):
-            train.update(dataloader=self.dataloader.train, optimizer=optimizer) 
-            valid.update(dataloader=self.dataloader.valid, seed=self.fix_seed)
-            TERMINATE, IMPROVED = valid.checkpoint(early_stopping=self.early_stopping)
+            train.update(model=self.model, loss_fn=self.dynamics.loss, dataloader=self.dataloader.train, optimizer=optimizer) 
+            valid.update(model=self.model, loss_fn=self.dynamics.loss, dataloader=self.dataloader.valid, seed=self.fix_seed)
+            TERMINATE, IMPROVED = valid.checkpoint(min_epochs=self.min_epochs, early_stopping=self.early_stopping)
             scheduler.step() 
             self._log_losses(train, valid, epoch)
             self._save_best_epoch_model(IMPROVED)
@@ -65,27 +68,27 @@ class DynGenModelTrainer:
                 break
             
         self._save_last_epoch_model()
-        self._save_best_epoch_model(True) # best = last epoch, needed as a placeholder for pipeline
+        self._save_best_epoch_model(~bool(self.dataloader.valid)) # best = last epoch if there is no validation, needed as a placeholder for pipeline
         self.plot_loss(valid_loss=valid.losses, train_loss=train.losses)
         self.logger.close()
         self.writer.close() 
         
     def load(self, path: str=None):
         path = self.workdir if path is None else Path(path)
-        self.dynamics.net.load_state_dict(torch.load(path / 'best_epoch_model.pth'))
-        self.best_epoch_model = deepcopy(self.dynamics.net)
-        self.dynamics.net.load_state_dict(torch.load(path / 'last_epoch_model.pth'))
-        self.last_epoch_model = deepcopy(self.dynamics.net)
+        self.model.load_state_dict(torch.load(path / 'best_epoch_model.pth'))
+        self.best_epoch_model = deepcopy(self.model)
+        self.model.load_state_dict(torch.load(path / 'last_epoch_model.pth'))
+        self.last_epoch_model = deepcopy(self.model)
 
     def _save_best_epoch_model(self, improved):
         if improved:
-            torch.save(self.dynamics.net.state_dict(), self.workdir / 'best_epoch_model.pth')
-            self.best_epoch_model = deepcopy(self.dynamics.net)
+            torch.save(self.model.state_dict(), self.workdir / 'best_epoch_model.pth')
+            self.best_epoch_model = deepcopy(self.model)
         else: pass
 
     def _save_last_epoch_model(self):
-        torch.save(self.dynamics.net.state_dict(), self.workdir / 'last_epoch_model.pth') 
-        self.last_epoch_model = deepcopy(self.dynamics.net)
+        torch.save(self.model.state_dict(), self.workdir / 'last_epoch_model.pth') 
+        self.last_epoch_model = deepcopy(self.model)
 
     def _log_losses(self, train, valid, epoch):
         self.writer.add_scalar('Loss/train', train.loss, epoch)

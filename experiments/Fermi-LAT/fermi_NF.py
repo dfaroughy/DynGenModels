@@ -11,8 +11,8 @@ configs = Configs(# data params:
                  cuts = {'theta': [-10., 10.], 'phi': [-5., 10.], 'energy': [1000, 2000]},
                  data_split_fracs = [0.8, 0.2, 0.0],
                  # training params:
-                 DEVICE = 'cuda:3',
-                 EPOCHS = 10,
+                 DEVICE = 'cuda:0',
+                 EPOCHS = 100,
                  batch_size = 15000,
                  print_epochs = 20,
                  early_stopping = 100,
@@ -22,15 +22,14 @@ configs = Configs(# data params:
                  fix_seed = 12345,
                  # model params:
                  DYNAMICS = 'NormFlow',
+                 permutation = '1-cycle',
                  num_transforms = 10,
-                 num_blocks = 3,
-                 dim_hidden = 64, 
+                 num_blocks = 2,
+                 dim_hidden = 256, 
                  dropout = 0.1,
                  num_bins = 30,
                  tail_bound = 10, 
-                 use_residual_blocks = True,
-                 # sampling params:
-                 num_gen_samples = 1000000
+                 use_residual_blocks = True
                  )
 
 #...set working directory for results:
@@ -44,10 +43,10 @@ from DynGenModels.datamodules.fermi.datasets import FermiDataset
 from DynGenModels.datamodules.fermi.dataloader import FermiDataLoader 
 
 fermi = FermiDataset(configs)
-dataloader = FermiDataLoader(fermi, configs)
-net = CouplingsPiecewiseRQS(configs)
-dynamics = NormalizingFlow(net, configs)
-nf = DynGenModelTrainer(dynamics=dynamics, dataloader=dataloader, configs=configs)
+nf = DynGenModelTrainer(dynamics = NormalizingFlow(configs), 
+                        model = CouplingsPiecewiseRQS(configs), 
+                        dataloader = FermiDataLoader(fermi, configs), 
+                        configs = configs)
 
 #...train model:
 
@@ -61,11 +60,13 @@ from DynGenModels.datamodules.fermi.dataprocess import PostProcessFermiData
 pipeline = NormFlowPipeline(trained_model=nf, 
                             configs=configs, 
                             postprocessor=PostProcessFermiData,
+                            num_gen_samples=fermi.target.shape[0],
                             best_epoch_model=False)
 
 pipeline_best = NormFlowPipeline(trained_model=nf, 
                                  configs=configs, 
                                  postprocessor=PostProcessFermiData,
+                                 num_gen_samples=fermi.target.shape[0],
                                  best_epoch_model=True)
 
 

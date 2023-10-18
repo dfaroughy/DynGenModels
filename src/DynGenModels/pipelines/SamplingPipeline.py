@@ -22,10 +22,10 @@ class FlowMatchPipeline:
                  best_epoch_model: bool=False
                  ):
         
-        self.model = trained_model
+        self.trained_model = trained_model
         self.source = source_input
         self.postprocessor = postprocessor
-        self.net = self.model.best_epoch_model if best_epoch_model else self.model.last_epoch_model
+        self.model = self.trained_model.best_epoch_model if best_epoch_model else self.trained_model.last_epoch_model
 
         self.t0 = configs.t1 if reverse_time_flow else configs.t0
         self.t1 = configs.t0 if reverse_time_flow else configs.t1
@@ -39,8 +39,8 @@ class FlowMatchPipeline:
         self.trajectories = self.ODEsolver()
 
         if self.postprocessor is not None:
-            self.stats = self.model.dataloader.datasets.summary_stats if postprocessor is not None else None
-            self.postprocess_methods = ['inverse_' + method for method in self.model.dataloader.datasets.preprocess_methods[::-1]]
+            self.stats = self.trained_model.dataloader.datasets.summary_stats if postprocessor is not None else None
+            self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
             print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))
 
         self.target = self.postprocess(self.trajectories[-1]) if postprocessor is not None else self.trajectories[-1]
@@ -51,7 +51,7 @@ class FlowMatchPipeline:
     def ODEsolver(self):
         print('INFO: neural ODE solver with {} method and steps={}'.format(self.solver, self.num_sampling_steps))
 
-        node = NeuralODE(vector_field=TorchdynWrapper(self.net), 
+        node = NeuralODE(vector_field=TorchdynWrapper(self.model), 
                         solver=self.solver, 
                         sensitivity=self.sensitivity, 
                         seminorm=True if self.solver=='dopri5' else False,
@@ -59,9 +59,9 @@ class FlowMatchPipeline:
                         rtol=self.rtol if self.solver=='dopri5' else None)
         
         if self.source is None:
-            assert self.model.dataloader.test is not None, "No test dataset available! provide source input!"
+            assert self.trained_model.dataloader.test is not None, "No test dataset available! provide source input!"
             trajectories = []
-            source = self.model.dataloader.test.to(self.device)
+            source = self.trained_model.dataloader.test.to(self.device)
             for batch in tqdm(source, desc="sampling"):
                 trajectories.append(node.trajectory(x=batch['source'], t_span=self.time_steps))
             trajectories = torch.cat(trajectories, dim=1)
@@ -87,23 +87,23 @@ class NormFlowPipeline:
                  best_epoch_model: bool=False
                  ):
         
-        self.model = trained_model
+        self.trained_model = trained_model
         self.device = configs.DEVICE
         self.num_gen_samples = configs.num_gen_samples if num_gen_samples is None else num_gen_samples
         self.postprocessor = postprocessor
-        self.net = self.model.best_epoch_model if best_epoch_model else self.model.last_epoch_model
+        self.model = self.trained_model.best_epoch_model if best_epoch_model else self.trained_model.last_epoch_model
         self.samples = self.sampler()
         
         if self.postprocessor is not None:
-            self.stats = self.model.dataloader.datasets.summary_stats if postprocessor is not None else None
-            self.postprocess_methods = ['inverse_' + method for method in self.model.dataloader.datasets.preprocess_methods[::-1]]
+            self.stats = self.trained_model.dataloader.datasets.summary_stats if postprocessor is not None else None
+            self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
             print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))
 
         self.target = self.postprocess(self.samples) if postprocessor is not None else self.samples
 
     @torch.no_grad()
     def sampler(self):
-        return self.net.sample(self.num_gen_samples).detach().cpu() 
+        return self.model.sample(self.num_gen_samples).detach().cpu() 
 
     def postprocess(self, samples):
         sample = self.postprocessor(data=samples, summary_stats=self.stats, methods=self.postprocess_methods)

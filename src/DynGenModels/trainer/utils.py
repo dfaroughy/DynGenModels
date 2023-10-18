@@ -8,26 +8,21 @@ from dataclasses import dataclass, fields
 
 class Train_Step(nn.Module): 
 
-    """
-    Represents a single training step.
-    
-    Attributes:
-    - loss_fn: The loss function to use during training.
+    """ Represents a training step.
     """
 
-    def __init__(self, loss_fn):
+    def __init__(self):
         super(Train_Step, self).__init__()
-        self.loss_fn = loss_fn
         self.loss = 0
         self.epoch = 0
         self.losses = []
 
-    def update(self, dataloader: DataLoader, optimizer):
+    def update(self, model, loss_fn, dataloader: DataLoader, optimizer):
         self.loss = 0
         self.epoch += 1
         for batch in dataloader:
             optimizer.zero_grad()
-            loss_current = self.loss_fn(batch)
+            loss_current = loss_fn(model, batch)
             loss_current.backward()
             optimizer.step()  
             self.loss += loss_current.detach().cpu().numpy() / len(dataloader)
@@ -35,37 +30,30 @@ class Train_Step(nn.Module):
 
 class Validation_Step(nn.Module):
 
-    """
-    Represents a validation step.
-    
-    Attributes:
-    - loss_fn: Loss function to compute validation loss.
-    - min_epochs: Minimum number of epochs before considering early stopping.
+    """ Represents a validation step.
     """
 
-    def __init__(self, loss_fn, min_epochs=10):
+    def __init__(self):
         super(Validation_Step, self).__init__()
-        self.loss_fn = loss_fn
         self.loss = 0
         self.epoch = 0
         self.loss_min = np.inf
-        self.min_epochs = min_epochs
         self.losses = []
         
     @torch.no_grad()
-    def update(self, dataloader: DataLoader, seed=None):
+    def update(self, model, loss_fn, dataloader: DataLoader, seed=None):
         self.epoch += 1
         self.loss = 0
         self.validate = bool(dataloader)
         if self.validate:
             with RNGStateFixer(seed):
                 for batch in dataloader:
-                    loss_current = self.loss_fn(batch)
+                    loss_current = loss_fn(model, batch)
                     self.loss += loss_current.detach().cpu().numpy() / len(dataloader)
             self.losses.append(self.loss) 
 
     @torch.no_grad()
-    def checkpoint(self, early_stopping=None):
+    def checkpoint(self, min_epochs, early_stopping=None):
         TERMINATE = False
         IMPROVED = False
         if self.validate:
@@ -73,7 +61,7 @@ class Validation_Step(nn.Module):
                 self.loss_min = self.loss
                 self.patience = 0
                 IMPROVED = True 
-            else: self.patience += 1 if self.epoch > self.min_epochs else 0
+            else: self.patience += 1 if self.epoch > min_epochs else 0
             if self.patience >= early_stopping: TERMINATE = True
         return TERMINATE, IMPROVED
 
