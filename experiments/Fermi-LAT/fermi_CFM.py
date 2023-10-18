@@ -29,7 +29,8 @@ configs = Configs(# data params:
                   t1 = 1.0,
                   # sampling params:
                   solver = 'rk4',
-                  num_sampling_steps = 1000
+                  num_sampling_steps = 1000,
+                  num_gen_samples = 100000
                 )
 
 #...set working directory for results:
@@ -59,7 +60,7 @@ from DynGenModels.pipelines.SamplingPipeline import FlowMatchPipeline
 from DynGenModels.datamodules.fermi.dataprocess import PostProcessFermiData 
 
 pipeline = FlowMatchPipeline(trained_model=fm, 
-                             source_input=torch.randn(fermi.target.shape[0], configs.dim_input),
+                             source_input=torch.randn(configs.num_gen_samples, configs.dim_input),
                              configs=configs, 
                              postprocessor=PostProcessFermiData, 
                              best_epoch_model=True)
@@ -75,7 +76,7 @@ results_plots(data=fermi.target,
               save_path=configs.workdir + '/fermi_features.pdf', 
               bins=200, 
               features=[r'$\theta$', r'$\phi$', r'$E$ [GeV]'],
-              num_particles=10000)
+              num_particles=configs.num_gen_samples)
 
 results_2D_plots(pipeline.target,
                  save_path=configs.workdir + '/fermi_features_2D.pdf',  
