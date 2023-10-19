@@ -26,8 +26,8 @@ configs = Configs(# data params:
                  mask = 'checkerboard',
                  num_transforms = 10,
                  # model params:
-                 num_blocks = 3,
-                 dim_hidden = 256, 
+                 num_blocks = 2,
+                 dim_hidden = 128, 
                  dropout = 0.1,
                  num_bins = 30,
                  tail_bound = 10, 

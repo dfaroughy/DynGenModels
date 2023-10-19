@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from copy import deepcopy
 import os
 
@@ -46,7 +46,12 @@ class DynGenModelTrainer:
         self.logger = Logger(configs, self.workdir / 'training.log')
 
     def train(self):
+
+        self.logger.logfile.info("Training configurations:")
+        for field in fields(self.configs):
+            self.logger.logfile.info(f"{field.name}: {getattr(configs, field.name)}")
         self.logger.logfile_and_console("Beginning training...")
+
         train = Train_Step()
         valid = Validation_Step()
         optimizer = Optimizer(self.configs)(self.model.parameters())
@@ -73,12 +78,20 @@ class DynGenModelTrainer:
         self.logger.close()
         self.writer.close() 
         
-    def load(self, path: str=None):
+    def load(self, path: str=None, model: str=None):
         path = self.workdir if path is None else Path(path)
-        self.model.load_state_dict(torch.load(path / 'best_epoch_model.pth'))
-        self.best_epoch_model = deepcopy(self.model)
-        self.model.load_state_dict(torch.load(path / 'last_epoch_model.pth'))
-        self.last_epoch_model = deepcopy(self.model)
+        if model is None:
+            self.model.load_state_dict(torch.load(path / 'best_epoch_model.pth'))
+            self.best_epoch_model = deepcopy(self.model)
+            self.model.load_state_dict(torch.load(path / 'last_epoch_model.pth'))
+            self.last_epoch_model = deepcopy(self.model)
+        elif model == 'best':
+            self.model.load_state_dict(torch.load(path / 'best_epoch_model.pth'))
+            self.best_epoch_model = deepcopy(self.model)
+        elif model == 'last':
+            self.model.load_state_dict(torch.load(path / 'last_epoch_model.pth'))
+            self.last_epoch_model = deepcopy(self.model)
+        else: raise ValueError("which_model must be either 'best', 'last', or None")
 
     def _save_best_epoch_model(self, improved):
         if improved:

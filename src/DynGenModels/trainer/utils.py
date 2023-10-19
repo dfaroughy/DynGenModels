@@ -186,9 +186,6 @@ class Logger:
         self.fh = None  
         self.ch = None 
         self._training_loggers()
-        self.logfile.info("Training configurations:")
-        for field in fields(configs):
-            self.logfile.info(f"{field.name}: {getattr(configs, field.name)}")
 
     def _training_loggers(self):
         
