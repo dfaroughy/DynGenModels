@@ -46,31 +46,25 @@ from DynGenModels.datamodules.fermi.datasets import FermiDataset
 from DynGenModels.datamodules.fermi.dataloader import FermiDataLoader 
 
 fermi = FermiDataset(configs)
-nf = DynGenModelTrainer(dynamics = NormalizingFlow(configs), 
-                        model = CouplingsPiecewiseRQS(configs), 
-                        dataloader = FermiDataLoader(fermi, configs), 
-                        configs = configs)
+coupl = DynGenModelTrainer(dynamics = NormalizingFlow(configs), 
+                           model = CouplingsPiecewiseRQS(configs), 
+                           dataloader = FermiDataLoader(fermi, configs), 
+                           configs = configs)
 
 #...train model:
 
-nf.train()
+coupl.train()
 
 #...sample from model:
 
 from DynGenModels.pipelines.SamplingPipeline import NormFlowPipeline
 from DynGenModels.datamodules.fermi.dataprocess import PostProcessFermiData 
 
-pipeline = NormFlowPipeline(trained_model=nf, 
+pipeline = NormFlowPipeline(trained_model=coupl, 
                             configs=configs, 
                             postprocessor=PostProcessFermiData,
                             num_gen_samples=fermi.target.shape[0],
-                            best_epoch_model=False)
-
-pipeline_best = NormFlowPipeline(trained_model=nf, 
-                                 configs=configs, 
-                                 postprocessor=PostProcessFermiData,
-                                 num_gen_samples=fermi.target.shape[0],
-                                 best_epoch_model=True)
+                            best_epoch_model=True)
 
 
 #...plot results:
@@ -85,18 +79,7 @@ results_plots(data=fermi.target,
               bins=300, 
               features=[r'$\theta$', r'$\phi$', r'$E$ [GeV]'])
 
-results_plots(data=fermi.target, 
-              generated=pipeline_best.target, 
-              comparator='pull',
-              model = configs.MODEL, 
-              save_path=configs.workdir + '/fermi_features_best.pdf', 
-              bins=300, 
-              features=[r'$\theta$', r'$\phi$', r'$E$ [GeV]'])
-
 results_2D_plots(pipeline.target,
                  save_path=configs.workdir + '/fermi_features_2D.pdf',  
                  gridsize=200)
 
-results_2D_plots(pipeline_best.target,
-                 save_path=configs.workdir + '/fermi_features_2D_best.pdf',  
-                 gridsize=200)
