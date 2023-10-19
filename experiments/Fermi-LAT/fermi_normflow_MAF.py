@@ -1,7 +1,7 @@
 
 from DynGenModels.dynamics.nf.normflows import NormalizingFlow
-from DynGenModels.models.nflow_nets import CouplingsPiecewiseRQS 
-from DynGenModels.configs.fermi_configs import FermiGCE_Couplings_RQS_NormFlow as Configs
+from DynGenModels.models.nflow_nets import MAFPiecewiseRQS 
+from DynGenModels.configs.fermi_configs import FermiGCE_MAF_RQS_NormFlow as Configs
 
 configs = Configs(# data params:
                  DATA = 'FermiGCE',
@@ -11,25 +11,28 @@ configs = Configs(# data params:
                  cuts = {'theta': [-10., 10.], 'phi': [-5., 10.], 'energy': [1000, 2000]},
                  data_split_fracs = [0.8, 0.2, 0.0],
                  # training params:
-                 DEVICE = 'cuda:0',
-                 EPOCHS = 100,
+                 DEVICE = 'cuda:2',
+                 EPOCHS = 10000,
                  batch_size = 15000,
                  print_epochs = 20,
                  early_stopping = 100,
                  min_epochs = 1000,
                  lr = 1e-4,
                  optimizer = 'Adam',
-                 fix_seed = 12345,
-                 # model params:
+                 fix_seed = None,
+                 # dynamics params:
                  DYNAMICS = 'NormFlow',
-                 permutation = '1-cycle',
+                 permutation = 'reverse',
                  num_transforms = 10,
-                 num_blocks = 2,
+                 # model params:
+                 MODEL = 'MAFPiecewiseRQS'
+                 num_blocks = 3,
                  dim_hidden = 256, 
                  dropout = 0.1,
                  num_bins = 30,
                  tail_bound = 10, 
-                 use_residual_blocks = True
+                 use_residual_blocks = False,
+                 use_batch_norm = False
                  )
 
 #...set working directory for results:
@@ -43,8 +46,9 @@ from DynGenModels.datamodules.fermi.datasets import FermiDataset
 from DynGenModels.datamodules.fermi.dataloader import FermiDataLoader 
 
 fermi = FermiDataset(configs)
+
 nf = DynGenModelTrainer(dynamics = NormalizingFlow(configs), 
-                        model = CouplingsPiecewiseRQS(configs), 
+                        model = MAFPiecewiseRQS(configs), 
                         dataloader = FermiDataLoader(fermi, configs), 
                         configs = configs)
 
@@ -68,7 +72,6 @@ pipeline_best = NormFlowPipeline(trained_model=nf,
                                  postprocessor=PostProcessFermiData,
                                  num_gen_samples=fermi.target.shape[0],
                                  best_epoch_model=True)
-
 
 #...plot results:
 
