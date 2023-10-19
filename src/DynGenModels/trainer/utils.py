@@ -178,30 +178,6 @@ class RNGStateFixer:
             np.random.set_state(self.saved_numpy_rng_state)
         return
 
-
-
-# class RNGStateFixer:
-#     """
-#     Context manager to fix the RNG state using a given seed.
-#     Restores the original state after exiting the context.
-    
-#     Attributes:
-#     - seed: Seed for the RNG.
-#     """
-
-#     def __init__(self, seed):
-#         self.seed = seed
-#         self.saved_rng_state = None
-#     def __enter__(self):
-#         if self.seed is not None: 
-#             self.saved_rng_state = torch.get_rng_state()
-#             torch.manual_seed(self.seed)
-#         return     
-#     def __exit__(self, *args):
-#         if self.seed is not None: torch.set_rng_state(self.saved_rng_state)
-#         return
-
-
 class Logger:
     ''' Logging handler for training and validation.
     '''

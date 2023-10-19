@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from dataclasses import dataclass
+import copy
 
 from nflows.flows.base import Flow
 from nflows.transforms.base import CompositeTransform
@@ -41,8 +42,10 @@ class MAFPiecewiseRQS(nn.Module):
 	def transforms(self):
 		self.transforms = []
 		for _ in range(self.num_transforms):
-			self.transforms.append(self.flow_net)
-			self.transforms.append(self.permutation)
+			flow = copy.deepcopy(self.flow_net)
+			perm = copy.deepcopy(self.permutation)
+			self.transforms.append(flow)
+			self.transforms.append(perm)
 
 	def log_prob(self, x):
 		return self.net.log_prob(x)
@@ -105,8 +108,10 @@ class MAFAffine(nn.Module):
 	def transforms(self):
 		self.transforms = []
 		for _ in range(self.num_transforms):
-			self.transforms.append(self.flow_net)
-			self.transforms.append(self.permutation)
+			flow = copy.deepcopy(self.flow_net)
+			perm = copy.deepcopy(self.permutation)
+			self.transforms.append(flow)
+			self.transforms.append(perm)
 
 	def log_prob(self, x):
 		return self.net.log_prob(x)
@@ -162,8 +167,10 @@ class CouplingsPiecewiseRQS(nn.Module):
 	def transforms(self):
 		self.transforms = []
 		for _ in range(self.num_transforms):
-			self.transforms.append(self.flow_net)
-			self.transforms.append(self.permutation)
+			flow = copy.deepcopy(self.flow_net)
+			perm = copy.deepcopy(self.permutation)
+			self.transforms.append(flow)
+			self.transforms.append(perm)
 
 	def log_prob(self, x):
 		return self.net.log_prob(x)

@@ -11,7 +11,7 @@ configs = Configs(# data params:
                  cuts = {'theta': [-10., 10.], 'phi': [-5., 10.], 'energy': [1000, 2000]},
                  data_split_fracs = [0.8, 0.2, 0.0],
                  # training params:
-                 DEVICE = 'cuda:2',
+                 DEVICE = 'cuda:3',
                  EPOCHS = 10000,
                  batch_size = 15000,
                  print_epochs = 20,
@@ -25,7 +25,6 @@ configs = Configs(# data params:
                  permutation = 'reverse',
                  num_transforms = 10,
                  # model params:
-                 MODEL = 'MAFPiecewiseRQS'
                  num_blocks = 3,
                  dim_hidden = 256, 
                  dropout = 0.1,
