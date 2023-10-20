@@ -47,17 +47,20 @@ class DynGenModelTrainer:
 
     def train(self):
 
-        self.logger.logfile.info("Training configurations:")
-        for field in fields(self.configs): self.logger.logfile.info(f"{field.name}: {getattr(self.configs, field.name)}")
-        self.logger.logfile_and_console("Start training...")
-
         train = Train_Step()
         valid = Validation_Step()
         optimizer = Optimizer(self.configs)(self.model.parameters())
         scheduler = Scheduler(self.configs)(optimizer)
+
+        #...logging
+
+        self.logger.logfile.info("Training configurations:")
+        for field in fields(self.configs): self.logger.logfile.info(f"{field.name}: {getattr(self.configs, field.name)}")
         self.logger.logfile_and_console('number of training parameters: {}'.format(sum(p.numel() for p in self.model.parameters())))
-        self.logger.logfile_and_console('validation set to: {}'.format(bool(self.dataloader.valid)))
-        
+        self.logger.logfile_and_console("start training...")
+
+        #...train
+
         for epoch in tqdm(range(self.epochs), desc="epochs"):
             train.update(model=self.model, loss_fn=self.dynamics.loss, dataloader=self.dataloader.train, optimizer=optimizer) 
             valid.update(model=self.model, loss_fn=self.dynamics.loss, dataloader=self.dataloader.valid, seed=self.fix_seed)
