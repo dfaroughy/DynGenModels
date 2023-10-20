@@ -41,16 +41,15 @@ class DynGenModelTrainer:
         self.fix_seed = configs.fix_seed
 
         #...logger & tensorboard:
-        os.makedirs(self.workdir / 'tensorboard', exist_ok=True)
-        self.writer = SummaryWriter(self.workdir / 'tensorboard')  
-        self.logger = Logger(configs, self.workdir / 'training.log')
+        os.makedirs(self.workdir/'tensorboard', exist_ok=True)
+        self.writer = SummaryWriter(self.workdir/'tensorboard')  
+        self.logger = Logger(configs, self.workdir/'training.log')
 
     def train(self):
 
         self.logger.logfile.info("Training configurations:")
-        for field in fields(self.configs):
-            self.logger.logfile.info(f"{field.name}: {getattr(configs, field.name)}")
-        self.logger.logfile_and_console("Beginning training...")
+        for field in fields(self.configs): self.logger.logfile.info(f"{field.name}: {getattr(self.configs, field.name)}")
+        self.logger.logfile_and_console("Start training...")
 
         train = Train_Step()
         valid = Validation_Step()
@@ -81,26 +80,26 @@ class DynGenModelTrainer:
     def load(self, path: str=None, model: str=None):
         path = self.workdir if path is None else Path(path)
         if model is None:
-            self.model.load_state_dict(torch.load(path / 'best_epoch_model.pth'))
+            self.model.load_state_dict(torch.load(path/'best_epoch_model.pth'))
             self.best_epoch_model = deepcopy(self.model)
-            self.model.load_state_dict(torch.load(path / 'last_epoch_model.pth'))
+            self.model.load_state_dict(torch.load(path/'last_epoch_model.pth'))
             self.last_epoch_model = deepcopy(self.model)
         elif model == 'best':
-            self.model.load_state_dict(torch.load(path / 'best_epoch_model.pth'))
+            self.model.load_state_dict(torch.load(path/'best_epoch_model.pth'))
             self.best_epoch_model = deepcopy(self.model)
         elif model == 'last':
-            self.model.load_state_dict(torch.load(path / 'last_epoch_model.pth'))
+            self.model.load_state_dict(torch.load(path/'last_epoch_model.pth'))
             self.last_epoch_model = deepcopy(self.model)
         else: raise ValueError("which_model must be either 'best', 'last', or None")
 
     def _save_best_epoch_model(self, improved):
         if improved:
-            torch.save(self.model.state_dict(), self.workdir / 'best_epoch_model.pth')
+            torch.save(self.model.state_dict(), self.workdir/'best_epoch_model.pth')
             self.best_epoch_model = deepcopy(self.model)
         else: pass
 
     def _save_last_epoch_model(self):
-        torch.save(self.model.state_dict(), self.workdir / 'last_epoch_model.pth') 
+        torch.save(self.model.state_dict(), self.workdir/'last_epoch_model.pth') 
         self.last_epoch_model = deepcopy(self.model)
 
     def _log_losses(self, train, valid, epoch):
