@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, Subset
 from torch.utils.data import Dataset
 from dataclasses import dataclass
 
-class JetNetDataLoader:
+class LHCOlympicsDataLoader:
 
     def __init__(self, datasets: Dataset, configs: dataclass): # type: ignore
 
