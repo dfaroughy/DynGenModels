@@ -37,7 +37,7 @@ class LHCOlympicsDataset(Dataset):
 
 
     def __len__(self):
-        return self.dijets.size(0)
+        return self.target.size(0)
     
     def __iter__(self):
         for i in range(len(self)):

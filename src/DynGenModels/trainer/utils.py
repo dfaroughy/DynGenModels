@@ -37,6 +37,7 @@ class Validation_Step(nn.Module):
         super(Validation_Step, self).__init__()
         self.loss = 0
         self.epoch = 0
+        self.patience = 0
         self.loss_min = np.inf
         self.losses = []
         

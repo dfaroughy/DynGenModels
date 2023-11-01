@@ -33,7 +33,7 @@ class SimplifiedCondFlowMatching:
 		self.t = self.reshape_time(t, x=self.x1)
 
 	def sample_path(self):
-		""" sample a path: x_t ~ p_t(x|x_0)
+		""" sample a path: x_t ~ p_t(x|x_0, x_1)
 		"""
 		self.conditional_probability_path()
 		self.path = self.mean + self.std * torch.randn_like(self.x1)
