@@ -5,9 +5,10 @@ import sys
 from DynGenModels.trainer.trainer import DynGenModelTrainer
 from DynGenModels.configs.lhco_configs import LHCOlympics_MLP_CondFlowMatch as Configs
 
-LR = float(sys.argv[1])
-DIM_HIDDEN = int(sys.argv[2])
-CUDA = 'cuda:{}'.format(sys.argv[3])
+BATCH_SIZE = int(sys.argv[1])
+LR = float(sys.argv[2])
+DIM_HIDDEN = int(sys.argv[3])
+CUDA = 'cuda:{}'.format(sys.argv[4])
 
 configs = Configs(# data:
                   DATA = 'LHCOlympics',
@@ -20,9 +21,10 @@ configs = Configs(# data:
                   # training params:   
                   DEVICE = CUDA,
                   EPOCHS = 10000,
-                  batch_size = 256,
-                  print_epochs = 10,
-                  early_stopping = 300,
+                  batch_size = BATCH_SIZE,
+                  print_epochs = 500,
+                  early_stopping = None,
+                  min_epochs = 5000,
                   data_split_fracs = [0.8, 0.2, 0.0],
                   lr = LR,
                   optimizer = 'Adam',

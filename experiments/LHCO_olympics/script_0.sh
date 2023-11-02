@@ -1,6 +1,5 @@
 #!/bin/bash
-python lhco_flowmatching.py 0.0001 32 0
-python lhco_flowmatching.py 0.0001 64 0
-python lhco_flowmatching.py 0.0001 128 0
-python lhco_flowmatching.py 0.0001 256 0
-python lhco_flowmatching.py 0.0001 512 0
+python lhco_flowmatching.py 128 0.001 64 0
+python lhco_flowmatching.py 256 0.001 64 0
+python lhco_flowmatching.py 512 0.001 64 0
+python lhco_flowmatching.py 1024 0.001 64 0
