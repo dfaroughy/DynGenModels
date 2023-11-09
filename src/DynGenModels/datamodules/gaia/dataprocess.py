@@ -8,6 +8,7 @@ class PreProcessGaiaData:
                  data, 
                  cuts: dict={'r': None},
                  sun: list=[8.122, 0.0, 0.0208],
+                 summary_stats: dict=None,
                  methods: list=None
                  ):
         
@@ -15,7 +16,7 @@ class PreProcessGaiaData:
         self.cuts = cuts 
         self.sun = torch.Tensor(sun)
         self.methods = methods
-        self.summary_stats = {}
+        self.summary_stats = {} if summary_stats is None else summary_stats
 
     def apply_cuts(self):
         ''' remove all stars with distance to sun farther than 'r' kiloparsecs
@@ -56,14 +57,14 @@ class PostProcessGaiaData:
     def __init__(self, 
                  data, 
                  summary_stats,
-                 sun: list=[8.122, 0.0, 0.0208],
-                 methods: list=None
+                 methods: list=None,
+                 sun: list=[8.122, 0.0, 0.0208]
                  ):
         
         self.features = data
-        self.sun = torch.Tensor(sun)
         self.summary_stats = summary_stats
         self.methods = methods
+        self.sun = torch.Tensor(sun)
 
     def postprocess(self):
         if self.methods is not None:

@@ -9,6 +9,7 @@ class PreProcessJetNetData:
                  jet_features,
                  mask, 
                  cuts: dict={'num_constituents': None},
+                 summary_stats: dict=None,
                  methods: list=None
                  ):
         
@@ -17,7 +18,7 @@ class PreProcessJetNetData:
         self.mask = mask[..., None]
         self.methods = methods
         self.cuts = cuts
-        self.summary_stats = {}
+        self.summary_stats = {} if summary_stats is None else summary_stats
 
     def apply_cuts(self):
         if self.cuts['num_constituents'] is not None:

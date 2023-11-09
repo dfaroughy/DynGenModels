@@ -7,13 +7,14 @@ class PreProcessFermiData:
     def __init__(self, 
                  data, 
                  cuts: dict={'theta': None, 'phi': None, 'energy': None},
+                 summary_stats: dict=None,
                  methods: list=None
                  ):
         
         self.features = data
         self.cuts = cuts 
         self.methods = methods
-        self.summary_stats = {}
+        self.summary_stats = {} if summary_stats is None else summary_stats
 
     def apply_cuts(self):
         self.selection_cuts(feature='energy', cut=self.cuts['energy'])

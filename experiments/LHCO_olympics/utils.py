@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 def plot_jet_features(lhco, trajectories, feature, xlim, time_step=None, d_step=None, figsize=(6,3), save_path=None):
 
-    dic = {'p_t':(0,4), '\eta':(1,5), '\phi':(2,6), 'm':(3,7)}
+    dic = {'p_x':(0,4), 'p_y':(1,5), 'p_z':(2,6), 'm':(3,7)}
     i, j = dic[feature]
 
     N =  float(trajectories.shape[0])

@@ -7,13 +7,14 @@ class PreProcessGaussData:
     def __init__(self, 
                  data, 
                  cuts: dict=None,
+                 summary_stats: dict=None,
                  methods: list=None 
                  ):
         
         self.features = data
         self.cuts = cuts if cuts is not None else {'x': None, 'y': None}
         self.methods = methods
-        self.summary_stats = {}
+        self.summary_stats = {} if summary_stats is None else summary_stats
 
     def apply_cuts(self):
         self.selection_cuts(feature='x', cut=self.cuts['x'])

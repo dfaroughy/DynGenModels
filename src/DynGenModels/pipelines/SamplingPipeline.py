@@ -44,9 +44,11 @@ class FlowMatchPipeline:
             print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))
 
         self.target = self.postprocess(self.trajectories[-1]) if postprocessor is not None else self.trajectories[-1]
+        self.midway = self.postprocess(self.trajectories[self.num_sampling_steps // 2]) if postprocessor is not None else self.trajectories[self.num_sampling_steps // 2]
+        self.quarter = self.postprocess(self.trajectories[self.num_sampling_steps // 4]) if postprocessor is not None else self.trajectories[self.num_sampling_steps // 4]
+        self.thirdquarter = self.postprocess(self.trajectories[3 * self.num_sampling_steps // 4]) if postprocessor is not None else self.trajectories[3 * self.num_sampling_steps // 4]
         self.source = self.postprocess(self.trajectories[0]) if postprocessor is not None else self.trajectories[0]
         
-
     @torch.no_grad()
     def ODEsolver(self):
         print('INFO: neural ODE solver with {} method and steps={}'.format(self.solver, self.num_sampling_steps))
