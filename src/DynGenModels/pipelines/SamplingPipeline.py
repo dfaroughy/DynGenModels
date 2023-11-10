@@ -36,21 +36,21 @@ class FlowMatchPipeline:
         self.rtol = configs.rtol if rtol is None else rtol
         self.device = configs.DEVICE
         self.time_steps = torch.linspace(self.t0, self.t1, self.num_sampling_steps, device=self.device)
-        self.trajectories = self.ODEsolver()
+        self.trajectories = self._ODEsolver()
 
         if self.postprocessor is not None:
             self.stats = self.trained_model.dataloader.datasets.summary_stats if postprocessor is not None else None
             self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
             print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))
 
-        self.target = self.postprocess(self.trajectories[-1]) if postprocessor is not None else self.trajectories[-1]
-        self.midway = self.postprocess(self.trajectories[self.num_sampling_steps // 2]) if postprocessor is not None else self.trajectories[self.num_sampling_steps // 2]
-        self.quarter = self.postprocess(self.trajectories[self.num_sampling_steps // 4]) if postprocessor is not None else self.trajectories[self.num_sampling_steps // 4]
-        self.thirdquarter = self.postprocess(self.trajectories[3 * self.num_sampling_steps // 4]) if postprocessor is not None else self.trajectories[3 * self.num_sampling_steps // 4]
-        self.source = self.postprocess(self.trajectories[0]) if postprocessor is not None else self.trajectories[0]
+        self.target = self._postprocess(self.trajectories[-1]) if postprocessor is not None else self.trajectories[-1]
+        self.midway = self._postprocess(self.trajectories[self.num_sampling_steps // 2]) if postprocessor is not None else self.trajectories[self.num_sampling_steps // 2]
+        self.quarter = self._postprocess(self.trajectories[self.num_sampling_steps // 4]) if postprocessor is not None else self.trajectories[self.num_sampling_steps // 4]
+        self.thirdquarter = self._postprocess(self.trajectories[3 * self.num_sampling_steps // 4]) if postprocessor is not None else self.trajectories[3 * self.num_sampling_steps // 4]
+        self.source = self._postprocess(self.trajectories[0]) if postprocessor is not None else self.trajectories[0]
         
     @torch.no_grad()
-    def ODEsolver(self):
+    def _ODEsolver(self):
         print('INFO: neural ODE solver with {} method and steps={}'.format(self.solver, self.num_sampling_steps))
 
         node = NeuralODE(vector_field=TorchdynWrapper(self.model), 
@@ -71,7 +71,7 @@ class FlowMatchPipeline:
             trajectories = node.trajectory(x=self.source.to(self.device), t_span=self.time_steps)
         return trajectories.detach().cpu() 
 
-    def postprocess(self, trajectories):
+    def _postprocess(self, trajectories):
         sample = self.postprocessor(data=trajectories, 
                                     summary_stats=self.stats, 
                                     methods=self.postprocess_methods)
@@ -79,35 +79,48 @@ class FlowMatchPipeline:
         return sample.features
 
 
+
 class NormFlowPipeline:
     
     def __init__(self,
                  trained_model: DynGenModelTrainer=None, 
+                 preprocessor: object=None,
                  postprocessor: object=None,
-                 configs: dataclass=None,
-                 num_gen_samples: int=None,
                  best_epoch_model: bool=False
                  ):
         
         self.trained_model = trained_model
-        self.device = configs.DEVICE
-        self.num_gen_samples = configs.num_gen_samples if num_gen_samples is None else num_gen_samples
+        self.preprocessor = preprocessor
         self.postprocessor = postprocessor
         self.model = self.trained_model.best_epoch_model if best_epoch_model else self.trained_model.last_epoch_model
-        self.samples = self.sampler()
-        
-        if self.postprocessor is not None:
-            self.stats = self.trained_model.dataloader.datasets.summary_stats if postprocessor is not None else None
-            self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
-            print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))
-
-        self.target = self.postprocess(self.samples) if postprocessor is not None else self.samples
 
     @torch.no_grad()
-    def sampler(self):
+    def _sampler(self):
         return self.model.sample(self.num_gen_samples).detach().cpu() 
 
-    def postprocess(self, samples):
-        sample = self.postprocessor(data=samples, summary_stats=self.stats, methods=self.postprocess_methods)
-        sample.postprocess()
-        return sample.features
+    def _preprocess(self, samples):
+        samples = self.preprocessor(samples, methods=self.trained_model.dataloader.datasets.preprocess_methods)
+        samples.preprocess()
+        return samples.features.to(self.model.device)
+
+    def _postprocess(self, samples):
+        samples = self.postprocessor(data=samples, summary_stats=self.stats, methods=self.postprocess_methods)
+        samples.postprocess()
+        return samples.features
+
+    @torch.no_grad()
+    def generate_sample(self, num_samples):  
+        samples = self.model.sample(num_samples).detach().cpu() 
+        if self.postprocessor is not None:
+            self.stats = self.trained_model.dataloader.datasets.summary_stats if self.postprocessor is not None else None
+            self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
+            print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))     
+        self.target = self._postprocess(samples) if self.postprocessor is not None else samples
+
+    @torch.no_grad()     
+    def log_prob(self, input):
+        return self.model.log_prob(self._preprocess(input)).detach().cpu() 
+
+    @torch.no_grad()     
+    def prob(self, input):
+        return torch.exp(self.model.log_prob(self._preprocess(inputs)).detach().cpu())
