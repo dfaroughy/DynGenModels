@@ -94,33 +94,24 @@ class NormFlowPipeline:
         self.postprocessor = postprocessor
         self.model = self.trained_model.best_epoch_model if best_epoch_model else self.trained_model.last_epoch_model
 
-    @torch.no_grad()
-    def _sampler(self):
-        return self.model.sample(self.num_gen_samples).detach().cpu() 
-
     def _preprocess(self, samples):
         samples = self.preprocessor(samples, methods=self.trained_model.dataloader.datasets.preprocess_methods)
         samples.preprocess()
-        return samples.features.to(self.model.device)
+        return samples.features
 
     def _postprocess(self, samples):
-        samples = self.postprocessor(data=samples, summary_stats=self.stats, methods=self.postprocess_methods)
+        self.stats = self.trained_model.dataloader.datasets.summary_stats
+        self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
+        samples = self.postprocessor(samples, summary_stats=self.stats, methods=self.postprocess_methods)
         samples.postprocess()
         return samples.features
 
     @torch.no_grad()
-    def generate_sample(self, num_samples):  
-        samples = self.model.sample(num_samples).detach().cpu() 
-        if self.postprocessor is not None:
-            self.stats = self.trained_model.dataloader.datasets.summary_stats if self.postprocessor is not None else None
-            self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
-            print("INFO: post-processing sampled data with {}".format(self.postprocess_methods))     
+    def generate_samples(self, num: int=1):  
+        samples = self.model.sample(num).detach().cpu() 
         self.target = self._postprocess(samples) if self.postprocessor is not None else samples
 
     @torch.no_grad()     
     def log_prob(self, input):
-        return self.model.log_prob(self._preprocess(input)).detach().cpu() 
-
-    @torch.no_grad()     
-    def prob(self, input):
-        return torch.exp(self.model.log_prob(self._preprocess(inputs)).detach().cpu())
+        input = input.to(self.model.device)
+        return self.model.log_prob(self._preprocess(input)).detach().cpu()
