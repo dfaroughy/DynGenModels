@@ -39,24 +39,30 @@ class FlowMatchPipeline:
         
     @torch.no_grad()
     def generate_samples(self, input_source):
-        self.source = self._preprocess(input_source) if self.preprocessor is not None else input_source
+        self.source = self._preprocess(input_source)
         self.trajectories = self._ODEsolver()  
-        self.target = self._postprocess(self.trajectories[-1]) if self.postprocessor is not None else self.trajectories[-1]
-        self.midway = self._postprocess(self.trajectories[self.num_sampling_steps // 2]) if self.postprocessor is not None else self.trajectories[self.num_sampling_steps // 2]
-        self.quarter = self._postprocess(self.trajectories[self.num_sampling_steps // 4]) if self.postprocessor is not None else self.trajectories[self.num_sampling_steps // 4]
-        self.thirdquarter = self._postprocess(self.trajectories[3 * self.num_sampling_steps // 4]) if self.postprocessor is not None else self.trajectories[3 * self.num_sampling_steps // 4]
+        self.target = self._postprocess(self.trajectories[-1])
+        self.midway = self._postprocess(self.trajectories[self.num_sampling_steps // 2])
+        self.quarter = self._postprocess(self.trajectories[self.num_sampling_steps // 4])
+        self.thirdquarter = self._postprocess(self.trajectories[3 * self.num_sampling_steps // 4])
 
     def _preprocess(self, samples):
-        samples = self.preprocessor(samples, methods=self.trained_model.dataloader.datasets.preprocess_methods)
-        samples.preprocess()
-        return samples.features
+        if self.preprocessor is not None:
+            samples = self.preprocessor(samples, methods=self.trained_model.dataloader.datasets.preprocess_methods)
+            samples.preprocess()
+            return samples.features
+        else:
+            return samples
 
     def _postprocess(self, samples):
-        self.stats = self.trained_model.dataloader.datasets.summary_stats
-        self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
-        samples = self.postprocessor(samples, summary_stats=self.stats, methods=self.postprocess_methods)
-        samples.postprocess()
-        return samples.features
+        if self.postprocessor is not None:
+            self.stats = self.trained_model.dataloader.datasets.summary_stats
+            self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
+            samples = self.postprocessor(samples, summary_stats=self.stats, methods=self.postprocess_methods)
+            samples.postprocess()
+            return samples.features
+        else:
+            return samples
 
     @torch.no_grad()
     def _ODEsolver(self):
@@ -88,21 +94,27 @@ class NormFlowPipeline:
         self.model = self.trained_model.best_epoch_model if best_epoch_model else self.trained_model.last_epoch_model
 
     def _preprocess(self, samples):
-        samples = self.preprocessor(samples, methods=self.trained_model.dataloader.datasets.preprocess_methods)
-        samples.preprocess()
-        return samples.features
+        if self.preprocessor is not None:
+            samples = self.preprocessor(samples, methods=self.trained_model.dataloader.datasets.preprocess_methods)
+            samples.preprocess()
+            return samples.features
+        else:
+            return samples
 
     def _postprocess(self, samples):
-        self.stats = self.trained_model.dataloader.datasets.summary_stats
-        self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
-        samples = self.postprocessor(samples, summary_stats=self.stats, methods=self.postprocess_methods)
-        samples.postprocess()
-        return samples.features
+        if self.postprocessor is not None:
+            self.stats = self.trained_model.dataloader.datasets.summary_stats
+            self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
+            samples = self.postprocessor(samples, summary_stats=self.stats, methods=self.postprocess_methods)
+            samples.postprocess()
+            return samples.features
+        else:
+            return samples
 
     @torch.no_grad()
     def generate_samples(self, num: int=1):  
         samples = self.model.sample(num).detach().cpu() 
-        self.target = self._postprocess(samples) if self.postprocessor is not None else samples
+        self.target = self._postprocess(samples)
 
     @torch.no_grad()     
     def log_prob(self, input):
