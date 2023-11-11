@@ -1,6 +1,6 @@
 import torch 
 from dataclasses import dataclass
-
+from torchcfm.conditional_flow_matching import ConditionalFlowMatcher, ExactOptimalTransportConditionalFlowMatcher, SchrodingerBridgeConditionalFlowMatcher 
 
 class SimplifiedCondFlowMatching:
 
@@ -55,3 +55,45 @@ class SimplifiedCondFlowMatching:
 		"""
 		if isinstance(t, float): return t
 		return t.reshape(-1, *([1] * (x.dim() - 1)))
+	
+class ConditionalFlowMatching:
+
+	def __init__(self, config: dataclass):
+		self.sigma_min = config.sigma
+		self.t0 = config.t0
+		self.t1 = config.t1
+
+	def flowmatcher(self, batch):
+		CFM = ConditionalFlowMatcher(sigma=self.sigma_min)
+		t, xt, ut = CFM.sample_location_and_conditional_flow(batch['source'], batch['target'])
+		self.t = (self.t1 - self.t0) * t[:, None]
+		self.path = xt
+		self.u = ut
+
+	def loss(self, model, batch):
+		""" conditional flow-mathcing/score-matching MSE loss
+		"""
+		self.flowmatcher(batch)
+		v = model(x=self.path, t=self.t, mask=batch['mask'])
+		u = self.u.to(v.device)
+		loss = torch.square(v - u)
+		return torch.mean(loss)
+
+
+class OptimalTransportFlowMatching(ConditionalFlowMatching):
+	
+	def flowmatcher(self, batch):
+		OTFM = ExactOptimalTransportConditionalFlowMatcher(sigma=self.sigma_min)
+		t, xt, ut = OTFM.sample_location_and_conditional_flow(batch['source'], batch['target'])
+		self.t = (self.t1 - self.t0) * t[:, None]
+		self.path = xt
+		self.u = ut
+
+class SchrodingerBridgeFlowMatching(ConditionalFlowMatching):
+	
+	def flowmatcher(self, batch):
+		SBFM = SchrodingerBridgeConditionalFlowMatcher(sigma=self.sigma_min, ot_method='exact')
+		t, xt, ut = SBFM.sample_location_and_conditional_flow(batch['source'], batch['target'])
+		self.t = (self.t1 - self.t0) * t[:, None]
+		self.path = xt
+		self.u = ut

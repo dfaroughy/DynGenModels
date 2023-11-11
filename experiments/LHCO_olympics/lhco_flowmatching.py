@@ -50,11 +50,11 @@ configs.set_workdir(path='../../results', save_config=True)
 from DynGenModels.datamodules.lhco.datasets import LHCOlympicsDataset 
 from DynGenModels.datamodules.lhco.dataloader import LHCOlympicsDataLoader 
 from DynGenModels.models.deep_nets import MLP
-from DynGenModels.dynamics.cnf.condflowmatch import SimplifiedCondFlowMatching
+from DynGenModels.dynamics.cnf.condflowmatch import OptimalTransportFlowMatching
 
 lhco = LHCOlympicsDataset(configs)
 
-cfm = DynGenModelTrainer(dynamics = SimplifiedCondFlowMatching(configs),
+cfm = DynGenModelTrainer(dynamics = OptimalTransportFlowMatching(configs),
                          model = MLP(configs), 
                          dataloader = LHCOlympicsDataLoader(lhco, configs), 
                          configs = configs)
