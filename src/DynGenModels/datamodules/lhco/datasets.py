@@ -5,9 +5,10 @@ from dataclasses import dataclass
 
 from DynGenModels.datamodules.lhco.dataprocess import PreProcessLHCOlympicsData, PreProcessLHCOlympicsHighLevelData
 
+
 class LHCOlympicsHighLevelDataset(Dataset):
 
-    def __init__(self, configs: dataclass):
+    def __init__(self, configs: dataclass, exchange_target_with_source=False):
 
         self.dataset = configs.dataset
         self.preprocess_methods = configs.preprocess 
@@ -16,6 +17,7 @@ class LHCOlympicsHighLevelDataset(Dataset):
         self.cuts_sideband_high = configs.cuts_sideband_high
         self.cuts_signal_region = {'mjj': [configs.cuts_sideband_low['mjj'][1], configs.cuts_sideband_high['mjj'][0]]}
         self.summary_stats = None
+        self.exchange_target_with_source = exchange_target_with_source
     
         ''' data attributes:
             - target: SB2 data
@@ -47,10 +49,12 @@ class LHCOlympicsHighLevelDataset(Dataset):
         dijets = torch.Tensor(f['jet features'])
         sb1 = PreProcessLHCOlympicsHighLevelData(dijets, num_dijets=self.num_dijets, cuts=self.cuts_sideband_low, methods=self.preprocess_methods)
         sb1.apply_cuts()
-        self.source = sb1.features.clone()
+        if self.exchange_target_with_source: self.target = sb1.features.clone()
+        else: self.source = sb1.features.clone()
         sb1.preprocess()
         self.summary_stats = sb1.summary_stats
-        self.source_preprocess = sb1.features.clone()
+        if self.exchange_target_with_source: self.target_preprocess = sb1.features.clone()
+        else: self.source_preprocess = sb1.features.clone()
         f.close()
 
     def get_target_data(self):
@@ -58,9 +62,11 @@ class LHCOlympicsHighLevelDataset(Dataset):
         dijets = torch.Tensor(f['jet features'])
         sb2 = PreProcessLHCOlympicsHighLevelData(dijets, num_dijets=self.num_dijets, cuts=self.cuts_sideband_high, methods=self.preprocess_methods, summary_stats=self.summary_stats)
         sb2.apply_cuts()
-        self.target = sb2.features.clone()
+        if self.exchange_target_with_source: self.source = sb2.features.clone()
+        else: self.target = sb2.features.clone()
         sb2.preprocess()
-        self.target_preprocess = sb2.features.clone()
+        if self.exchange_target_with_source: self.source_preprocess = sb2.features.clone()
+        else: self.target_preprocess = sb2.features.clone()
         f.close()
 
     def get_background_data(self):
@@ -72,7 +78,6 @@ class LHCOlympicsHighLevelDataset(Dataset):
         sr.preprocess()
         self.background_preprocess = sr.features.clone()
         f.close()
-
 
 
 class LHCOlympicsDataset(Dataset):
