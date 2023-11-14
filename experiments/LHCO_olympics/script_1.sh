@@ -1,5 +1,3 @@
 #!/bin/bash
-python lhco_flowmatching.py 512 0.001 512 2 0 SchrodingerBridgeFlowMatching
-python lhco_flowmatching.py 512 0.001 512 2 1 SchrodingerBridgeFlowMatching
-python lhco_flowmatching.py 1024 0.0001 512 2 0 SchrodingerBridgeFlowMatching
-python lhco_flowmatching.py 1024 0.0001 512 2 1 SchrodingerBridgeFlowMatching
+python lhco_flowmatching.py 1 512 0.001 512 0 SchrodingerBridgeFlowMatching 0.00001 2600 3300 3700 13000 143871
+python lhco_flowmatching.py 1 512 0.001 512 1 SchrodingerBridgeFlowMatching 0.00001 2600 3300 3700 13000 143871
