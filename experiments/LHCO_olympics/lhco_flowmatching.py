@@ -5,28 +5,34 @@ import sys
 from DynGenModels.trainer.trainer import DynGenModelTrainer
 from DynGenModels.configs.lhco_configs import LHCOlympics_HighLevel_MLP_CondFlowMatch as Configs
 
-BATCH_SIZE = int(sys.argv[1])
-LR = float(sys.argv[2])
-DIM_HIDDEN = int(sys.argv[3])
-CUDA = 'cuda:{}'.format(sys.argv[4])
+CUDA = 'cuda:{}'.format(sys.argv[1])
+BATCH_SIZE = int(sys.argv[2])
+LR = float(sys.argv[3])
+DIM_HIDDEN = int(sys.argv[4])
 EXCHANGE_TARGET_WITH_SOURCE = bool(int(sys.argv[5]))
 DYNAMICS = sys.argv[6]
+SIGMA = float(sys.argv[7])
+SB1_MIN = float(sys.argv[8])
+SB1_MAX = float(sys.argv[9])
+SB2_MIN = float(sys.argv[10])
+SB2_MAX = float(sys.argv[11])
+NUM_DIJETS = int(sys.argv[12])
 
 configs = Configs(# data:
                   DATA = 'LHCOlympics',
                   dataset = '../../data/LHCOlympics2020/events_anomalydetection_high_level_cathode.h5', 
                   features = ['mjj', 'mj1', 'delta_m', 'tau21_1', 'tau21_2'],
-                  cuts_sideband_low = {'mjj': [2600, 3200]},  
-                  cuts_sideband_high = {'mjj': [3800, 4400]}, 
+                  cuts_sideband_low = {'mjj': [SB1_MIN, SB1_MAX]},  
+                  cuts_sideband_high = {'mjj': [SB2_MIN, SB2_MAX]}, 
                   preprocess = None,                            
-                  num_dijets = 75166,  
+                  num_dijets = NUM_DIJETS,  
                   # training params:   
                   DEVICE = CUDA,
-                  EPOCHS = 1000,
+                  EPOCHS = 10000,
                   batch_size = BATCH_SIZE,
                   print_epochs = 20,
-                  early_stopping = 50,
-                  min_epochs = 500,
+                  early_stopping = 100,
+                  min_epochs = 5000,
                   data_split_fracs = [0.85, 0.15, 0.0],
                   lr = LR,
                   optimizer = 'Adam',
@@ -36,7 +42,7 @@ configs = Configs(# data:
                   MODEL = 'MLP_backward' if EXCHANGE_TARGET_WITH_SOURCE else 'MLP_forward',
                   dim_hidden = DIM_HIDDEN,
                   num_layers = 4,
-                  sigma = 1e-5,
+                  sigma = SIGMA,
                   t0 = 0.0,
                   t1 = 1.0,
                   # sampling params:
