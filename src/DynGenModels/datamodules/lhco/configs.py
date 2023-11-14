@@ -7,7 +7,7 @@ from typing import List, Dict
 
 @dataclass
 class LHCOlympics_HighLevel_Configs:
-    DATA : str = 'LHCOlympics'
+    DATA : str = 'LHCOlympicsHighLevel'
     dataset : str = '../../data/LHCOlympics2020/events_anomalydetection_high_level_cathode.h5'
     features : List[str] = field(default_factory = lambda : ['mjj', 'mj1', 'delta_m', 'tau21_1', 'tau21_2'])
     dim_input : int = 5
@@ -15,10 +15,21 @@ class LHCOlympics_HighLevel_Configs:
     cuts_sideband_low : Dict[str, List[float]] = field(default_factory = lambda: {'mjj': [2700, 3100], } )
     cuts_sideband_high : Dict[str, List[float]] = field(default_factory = lambda: {'mjj': [3900, 13000]} )
     num_dijets : int = 60000
-
     def __post_init__(self):
         self.dim_input = len(self.features)
 
+@dataclass
+class LHCOlympics_LowLevel_Configs:
+    DATA : str = 'LHCOlympicsLowLevel'
+    dataset : str = '../../data/LHCOlympics2020/events_anomalydetection_high_level_cathode.h5'
+    features : List[str] = field(default_factory = lambda : ['px1', 'py1', 'pz1', 'm1', 'px2', 'py2', 'pz2', 'm2',])
+    dim_input : int = 8
+    preprocess : List[str] = field(default_factory = lambda : ['normalize', 'logit_transform', 'standardize'])
+    cuts_sideband_low : Dict[str, List[float]] = field(default_factory = lambda: {'mjj': [2700, 3100], } )
+    cuts_sideband_high : Dict[str, List[float]] = field(default_factory = lambda: {'mjj': [3900, 13000]} )
+    num_dijets : int = 60000
+    def __post_init__(self):
+        self.dim_input = len(self.features)
 
 @dataclass
 class LHCOlympics_Configs:
@@ -30,6 +41,5 @@ class LHCOlympics_Configs:
     cuts_sideband_low : Dict[str, List[float]] = field(default_factory = lambda: {'mjj': [2700, 3100], } )
     cuts_sideband_high : Dict[str, List[float]] = field(default_factory = lambda: {'mjj': [3900, 13000]} )
     num_dijets : int = 60000
-
     def __post_init__(self):
         self.dim_input = len(self.features)
