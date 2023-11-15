@@ -27,8 +27,8 @@ class Gauss_2_Moons_Dataset(Dataset):
 
     def __getitem__(self, idx):
         output = {}
-        output['target'] = self.target[idx] if self.exchange_source_with_target is False else self.source[idx]
-        output['source'] = self.source[idx] if self.exchange_source_with_target is False else self.target[idx]
+        output['target'] = self.target[idx] 
+        output['source'] = self.source[idx] 
         output['mask'] = torch.ones_like(self.target[idx][..., 0])
         output['context'] = torch.empty_like(self.target[idx][..., 0])
         return output
@@ -44,6 +44,8 @@ class Gauss_2_Moons_Dataset(Dataset):
         from torchdyn.datasets import generate_moons
         x, _ = generate_moons(self.num_points, self.moon_2_noise)
         self.target = x * 3 - 1
+        if self.exchange_source_with_target: self.source = x * 3 - 1
+        else: self.target = x * 3 - 1
 
     def get_source_data(self,  dim=2):
 
@@ -58,4 +60,5 @@ class Gauss_2_Moons_Dataset(Dataset):
         for i in range(self.num_points):
             data.append(centers[multi[i]] + noise[i])
         
-        self.source = torch.stack(data)
+        if self.exchange_source_with_target: self.target = torch.stack(data)
+        else: self.source = torch.stack(data)

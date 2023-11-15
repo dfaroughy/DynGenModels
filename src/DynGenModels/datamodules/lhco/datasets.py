@@ -52,27 +52,34 @@ class LHCOlympicsHighLevelDataset(Dataset):
         if self.exchange_target_with_source: self.target = sb1.features.clone()
         else: self.source = sb1.features.clone()
         sb1.preprocess()
-        self.summary_stats = sb1.summary_stats
-        if self.exchange_target_with_source: self.target_preprocess = sb1.features.clone()
-        else: self.source_preprocess = sb1.features.clone()
+        if self.exchange_target_with_source: 
+            self.target_preprocess = sb1.features.clone()
+            self.summary_stats_target = sb1.summary_stats
+        else: 
+            self.source_preprocess = sb1.features.clone()
+            self.summary_stats_source = sb1.summary_stats
         f.close()
 
     def get_target_data(self):
         f = h5py.File(self.dataset, 'r') 
         dijets = torch.Tensor(f['jet features'])
-        sb2 = PreProcessLHCOlympicsHighLevelData(dijets, num_dijets=self.num_dijets, cuts=self.cuts_sideband_high, methods=self.preprocess_methods, summary_stats=self.summary_stats)
+        sb2 = PreProcessLHCOlympicsHighLevelData(dijets, num_dijets=self.num_dijets, cuts=self.cuts_sideband_high, methods=self.preprocess_methods)
         sb2.apply_cuts()
         if self.exchange_target_with_source: self.source = sb2.features.clone()
         else: self.target = sb2.features.clone()
         sb2.preprocess()
-        if self.exchange_target_with_source: self.source_preprocess = sb2.features.clone()
-        else: self.target_preprocess = sb2.features.clone()
+        if self.exchange_target_with_source: 
+            self.source_preprocess = sb2.features.clone()
+            self.summary_stats_source = sb2.summary_stats
+        else: 
+            self.target_preprocess = sb2.features.clone()
+            self.summary_stats_target = sb2.summary_stats
         f.close()
 
     def get_background_data(self):
         f = h5py.File(self.dataset, 'r') 
         dijets = torch.Tensor(f['jet features'])
-        sr = PreProcessLHCOlympicsHighLevelData(dijets, num_dijets=self.num_dijets, cuts=self.cuts_signal_region, methods=self.preprocess_methods, summary_stats=self.summary_stats)
+        sr = PreProcessLHCOlympicsHighLevelData(dijets, num_dijets=self.num_dijets, cuts=self.cuts_signal_region, methods=self.preprocess_methods)
         sr.apply_cuts(background=True)
         self.background = sr.features.clone()
         sr.preprocess()
