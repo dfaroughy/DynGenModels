@@ -40,16 +40,16 @@ class FlowMatchPipeline:
     @torch.no_grad()
     def generate_samples(self, input_source):
         self.source = self._preprocess(input_source)
-        self.trajectories = self._ODEsolver()  
-        self.target = self._postprocess(self.trajectories[-1])
-        self.midway = self._postprocess(self.trajectories[self.num_sampling_steps // 2])
-        self.quarter = self._postprocess(self.trajectories[self.num_sampling_steps // 4])
-        self.thirdquarter = self._postprocess(self.trajectories[3 * self.num_sampling_steps // 4])
+        self.trajectories = self._postprocess(self._ODEsolver())  
+        self.target = self.trajectories[-1]
+        self.midway = self.trajectories[self.num_sampling_steps // 2]
+        self.quarter = self.trajectories[self.num_sampling_steps // 4]
+        self.thirdquarter = self.trajectories[3 * self.num_sampling_steps // 4]
 
     def _preprocess(self, samples):
         if self.preprocessor is not None:
             samples = self.preprocessor(samples, methods=self.trained_model.dataloader.datasets.preprocess_methods)
-            samples.preprocess()
+            samples.preprocess(format=False)
             return samples.features
         else:
             return samples

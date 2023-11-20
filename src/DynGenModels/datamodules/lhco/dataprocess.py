@@ -4,7 +4,7 @@ import numpy as np
 
 
 class PreProcessLHCOlympicsHighLevelData:
-
+ 
     def __init__(self, 
                  data, 
                  num_dijets: int=None,
@@ -19,10 +19,15 @@ class PreProcessLHCOlympicsHighLevelData:
         self.methods = methods
         self.summary_stats = {} if summary_stats is None else summary_stats
 
-    def apply_cuts(self, background=False):
-        self.selection_cuts(feature='mjj', cut=self.cuts['mjj'], background=background)
+    def apply_cuts(self, cuts, complement=False, background=False):
+        self.selection_cuts(feature='mjj', cuts=cuts, complement=complement, background=background)
 
-    def preprocess(self):        
+    def format(self):
+        self.features = torch.tensor(self.features[:self.num_dijets])  
+        self.features = self.features[..., 1:] # remove truth label form features
+
+    def preprocess(self, format: bool=True):
+        if format: self.format()
         if self.methods is not None:
             for method in self.methods:
                 method = getattr(self, method, None)
@@ -30,15 +35,12 @@ class PreProcessLHCOlympicsHighLevelData:
                 else: raise ValueError('Preprocessing method {} not implemented'.format(method))
         else: pass
     
-    def selection_cuts(self, feature, cut=None, background=False):
-        if cut is None: cut=[-np.inf, np.inf]
-        dic={'mjj':1}
-        if background:
-            self.features = self.features[self.features[...,0]==0]
-        mask = (self.features[..., dic[feature]] >= cut[0]) & (self.features[..., dic[feature]] <= cut[1])
+    def selection_cuts(self, feature, cuts=None, complement=False, background=False):
+        dic={'mjj':1, 'mj1':2, 'delta_m':3, 'tau21_1':4, 'tau21_2':5}
+        if background: self.features = self.features[self.features[...,0]==0]
+        mask = (self.features[..., dic[feature]] >= cuts[feature][0]) & (self.features[..., dic[feature]] <= cuts[feature][1])
+        if complement: mask = ~mask
         self.features = self.features[mask]
-        self.features = torch.tensor(self.features[:self.num_dijets])  
-        self.features = self.features[..., 1:]
     
     def standardize(self,  sigma: float=1.0):
         """ standardize data to have zero mean and unit variance

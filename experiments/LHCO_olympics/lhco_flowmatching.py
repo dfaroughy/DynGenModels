@@ -24,15 +24,15 @@ configs = Configs(# data:
                   features = ['mjj', 'mj1', 'delta_m', 'tau21_1', 'tau21_2'],
                   cuts_sideband_low = {'mjj': [SB1_MIN, SB1_MAX]},  
                   cuts_sideband_high = {'mjj': [SB2_MIN, SB2_MAX]}, 
-                  preprocess = None,                            
+                  preprocess = ['normalize'],                            
                   num_dijets = NUM_DIJETS,  
                   # training params:   
                   DEVICE = CUDA,
-                  EPOCHS = 10000,
+                  EPOCHS = 5000,
                   batch_size = BATCH_SIZE,
                   print_epochs = 20,
-                  early_stopping = 100,
-                  min_epochs = 5000,
+                  early_stopping = 50,
+                  min_epochs = 500,
                   data_split_fracs = [0.85, 0.15, 0.0],
                   lr = LR,
                   optimizer = 'Adam',
@@ -63,6 +63,7 @@ from DynGenModels.models.deep_nets import MLP
 
 if DYNAMICS == 'OptimalTransportFlowMatching':
   from DynGenModels.dynamics.cnf.condflowmatch import OptimalTransportFlowMatching as dynamics
+
 if DYNAMICS == 'SchrodingerBridgeFlowMatching':
   from DynGenModels.dynamics.cnf.condflowmatch import SchrodingerBridgeFlowMatching as dynamics
 
@@ -79,12 +80,14 @@ cfm.train()
 #...sample from model:
 
 from DynGenModels.pipelines.SamplingPipeline import FlowMatchPipeline 
+from DynGenModels.datamodules.lhco.dataprocess import PostProcessLHCOlympicsHighLevelData
 
 pipeline = FlowMatchPipeline(trained_model=cfm, 
                              configs=configs, 
+                             postprocessor=PostProcessLHCOlympicsHighLevelData,
                              best_epoch_model=True)
 
-pipeline.generate_samples(input_source=lhco.source)
+pipeline.generate_samples(input_source=lhco.source_preprocess)
 
 #...plot results:
 
