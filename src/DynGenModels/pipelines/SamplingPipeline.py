@@ -23,6 +23,7 @@ class FlowMatchPipeline:
                  ):
         
         self.trained_model = trained_model
+        self.stats = self.trained_model.dataloader.datasets.summary_stats
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
         self.model = self.trained_model.best_epoch_model if best_epoch_model else self.trained_model.last_epoch_model
@@ -48,7 +49,7 @@ class FlowMatchPipeline:
 
     def _preprocess(self, samples):
         if self.preprocessor is not None:
-            samples = self.preprocessor(samples, methods=self.trained_model.dataloader.datasets.preprocess_methods)
+            samples = self.preprocessor(samples, methods=self.trained_model.dataloader.datasets.preprocess_methods, summary_stats=self.stats)
             samples.preprocess(format=False)
             return samples.features
         else:
@@ -56,9 +57,8 @@ class FlowMatchPipeline:
 
     def _postprocess(self, samples):
         if self.postprocessor is not None:
-            self.stats = self.trained_model.dataloader.datasets.summary_stats
             self.postprocess_methods = ['inverse_' + method for method in self.trained_model.dataloader.datasets.preprocess_methods[::-1]]
-            samples = self.postprocessor(samples, summary_stats=self.stats, methods=self.postprocess_methods)
+            samples = self.postprocessor(samples, methods=self.postprocess_methods, summary_stats=self.stats)
             samples.postprocess()
             return samples.features
         else:
