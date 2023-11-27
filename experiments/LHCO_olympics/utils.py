@@ -10,6 +10,7 @@ def load_bridge_pipelines(model_fwd,
                           model_bwd, 
                           bridge, 
                           device,
+                          num_samples=100000000,
                           model='best'):
 
     #...load forward bridge:
@@ -20,14 +21,14 @@ def load_bridge_pipelines(model_fwd,
     from DynGenModels.models.deep_nets import MLP
     from DynGenModels.trainer.trainer import DynGenModelTrainer
 
-    configs = Configs().load(model_fwd + '/config.json')
-    configs.DEVICE = device  
-    configs.workdir = model_fwd 
-    lhco_fwd = LHCOlympicsHighLevelDataset(configs)
-    cfm_fwd  = DynGenModelTrainer(dynamics = bridge(configs),
-                                    model = MLP(configs), 
-                                    dataloader = LHCOlympicsDataLoader(lhco_fwd , configs), 
-                                    configs = configs)
+    configs_fwd = Configs().load(model_fwd + '/config.json')
+    configs_fwd.DEVICE = device  
+    configs_fwd.workdir = model_fwd 
+    lhco_fwd = LHCOlympicsHighLevelDataset(configs_fwd)
+    cfm_fwd  = DynGenModelTrainer(dynamics = bridge(configs_fwd),
+                                  model = MLP(configs_fwd), 
+                                  dataloader = LHCOlympicsDataLoader(lhco_fwd , configs_fwd), 
+                                  configs = configs_fwd)
     cfm_fwd.load(model=model)
 
     #...load backward bridge:
@@ -36,35 +37,39 @@ def load_bridge_pipelines(model_fwd,
     from DynGenModels.datamodules.lhco.datasets import LHCOlympicsHighLevelDataset
     from DynGenModels.datamodules.lhco.dataloader import LHCOlympicsDataLoader 
     from DynGenModels.models.deep_nets import MLP
-    from DynGenModels.dynamics.cnf.condflowmatch import SchrodingerBridgeFlowMatching
     from DynGenModels.trainer.trainer import DynGenModelTrainer
 
-    configs = Configs().load(model_bwd + '/config.json')
-    configs.DEVICE = device  
-    configs.workdir = model_bwd
-    lhco_bwd = LHCOlympicsHighLevelDataset(configs, exchange_target_with_source=True)
-    cfm_bwd = DynGenModelTrainer(dynamics = SchrodingerBridgeFlowMatching(configs),
-                                    model = MLP(configs), 
-                                    dataloader = LHCOlympicsDataLoader(lhco_bwd, configs), 
-                                    configs = configs)
+    configs_bwd = Configs().load(model_bwd + '/config.json')
+    configs_bwd.DEVICE = device  
+    configs_bwd.workdir = model_bwd
+    lhco_bwd = LHCOlympicsHighLevelDataset(configs_bwd, exchange_target_with_source=True)
+    cfm_bwd = DynGenModelTrainer(dynamics = bridge(configs_bwd),
+                                 model = MLP(configs_bwd), 
+                                 dataloader = LHCOlympicsDataLoader(lhco_bwd, configs_bwd), 
+                                 configs = configs_bwd)
     cfm_bwd.load(model=model)
 
     #...get pipelines:
 
     from DynGenModels.pipelines.SamplingPipeline import FlowMatchPipeline 
+    from DynGenModels.datamodules.lhco.dataprocess import PreProcessLHCOlympicsHighLevelData, PostProcessLHCOlympicsHighLevelData
 
     pipeline_fwd = FlowMatchPipeline(trained_model=cfm_fwd, 
-                                         configs=configs, 
-                                         best_epoch_model=True)
+                                     configs=configs_fwd, 
+                                     preprocessor=PreProcessLHCOlympicsHighLevelData,
+                                     postprocessor=PostProcessLHCOlympicsHighLevelData,
+                                     best_epoch_model=True)
 
     pipeline_bwd = FlowMatchPipeline(trained_model=cfm_bwd, 
-                                          configs=configs, 
-                                          best_epoch_model=True)
+                                     configs=configs_bwd, 
+                                     preprocessor=PreProcessLHCOlympicsHighLevelData,
+                                     postprocessor=PostProcessLHCOlympicsHighLevelData,
+                                     best_epoch_model=True)
 
     #...generate samples:
 
-    pipeline_fwd.generate_samples(input_source=lhco_fwd.source)
-    pipeline_bwd.generate_samples(input_source=lhco_bwd.source)
+    pipeline_fwd.generate_samples(input_source=lhco_fwd.source[:num_samples])
+    pipeline_bwd.generate_samples(input_source=lhco_bwd.source[:num_samples])
 
     return pipeline_fwd, pipeline_bwd, lhco_fwd, lhco_bwd
 
@@ -78,6 +83,8 @@ def plot_interpolation(lhco, pipeline,  mass_window, figsize=(14,6),
     idx = torch.argmin(torch.abs(x))
     interpolation = pipeline.trajectories[idx]  
     mask = (interpolation[...,0] > mass_window[0]) & (interpolation[...,0] < mass_window[1])
+    mask_back = (lhco.background[...,0] > mass_window[0]) & (lhco.background[...,0] < mass_window[1])
+
     fig, axs = plt.subplots(2, 5, figsize=figsize, gridspec_kw={'height_ratios': [5, 1]})
 
     for f in range(len(features)):
@@ -89,7 +96,7 @@ def plot_interpolation(lhco, pipeline,  mass_window, figsize=(14,6),
         ax.hist(interpolation[mask][...,f], bins=b, histtype='step', color='k', label='t=0.5', log=log, density=density)
         ax.hist(interpolation[...,f], bins=b, histtype='step', color='k', ls=':',  log=log, density=density)
         ax.hist(lhco.target[...,f], bins=b, histtype='step', color='darkblue',  label='SB2 (target)', log=log, density=density)
-        ax.hist(lhco.background[...,f],bins=b, histtype='stepfilled', color='gray', alpha=0.3, label='SR', log=log, density=density)
+        ax.hist(lhco.background[mask_back][...,f],bins=b, histtype='stepfilled', color='gray', alpha=0.3, label='SR', log=log, density=density)
         ax.set_xticklabels([])  # Hide x-axis labels for the top row
         if f==0: ax.legend(loc='upper right', fontsize=8)
 
@@ -97,7 +104,7 @@ def plot_interpolation(lhco, pipeline,  mass_window, figsize=(14,6),
         counts_sb1, _ = np.histogram(lhco.source[...,f], bins=b, density=density)
         counts_sb2, _ = np.histogram(lhco.target[...,f], bins=b, density=density)
         counts_interpolation, _ = np.histogram(interpolation[mask][...,f], bins=b, density=density)
-        counts_background, _ = np.histogram(lhco.background[...,f], bins=b, density=density)
+        counts_background, _ = np.histogram(lhco.background[mask_back][...,f], bins=b, density=density)
 
         ratio_sb1 = np.divide(counts_sb1, counts_background, out=np.zeros_like(counts_sb1), where=counts_background!=0)
         ratio_sb2 = np.divide(counts_sb2, counts_background, out=np.zeros_like(counts_sb2), where=counts_background!=0)
@@ -122,8 +129,89 @@ def plot_interpolation(lhco, pipeline,  mass_window, figsize=(14,6),
         ax_ratio.set_yticks([0.8,  0.9,  1,  1.1,  1.2])
     
     if save_path is not None: plt.savefig(save_path)
-    plt.show()
+    else: plt.show()
     plt.close()
+
+
+
+def plot_interpolation_low_level(lhco, pipeline,  mass_window,  subleading=False,  time_stop_feature='mjj', figsize=(12,6), 
+                                features=['mjj', 'px_j1', 'py_j1', 'pz_j1', 'e_j1'],
+                                bins=[(2700, 4200, 40), (-2000, 2000, 100), (-2000, 2000, 100), (-5000, 5000, 200), (600, 4000, 100)], 
+                                log=True, density=True, save_path=None, show=False):    
+    dic = {'mjj':0, 'delta_R':1, 'pt_j1':2, 'eta_j1':3, 'phi_j1':4, 'm_j1':5, 'pt_j2':6, 'eta_j2':7, 'phi_j2':8, 'm_j2':9, 
+           'px_j1':10, 'py_j1':11, 'pz_j1':12, 'e_j1':13, 'px_j2':14, 'py_j2':15, 'pz_j2':16, 'e_j2':17}
+
+    N = pipeline.num_sampling_steps
+
+    def get_features(features):
+        px_j1, py_j1, pz_j1, e_j1 = features[...,0], features[...,1], features[...,2], features[...,3]
+        px_j2, py_j2, pz_j2, e_j2 = features[...,4], features[...,5], features[...,6], features[...,7]
+        m_j1 = torch.sqrt(e_j1**2 - px_j1**2 - py_j1**2 - pz_j1**2)
+        m_j2 = torch.sqrt(e_j2**2 - px_j2**2 - py_j2**2 - pz_j2**2)
+        pt_j1,  pt_j2 = torch.sqrt(px_j1**2 + py_j1**2), torch.sqrt(px_j2**2 + py_j2**2)  
+        eta_j1, eta_j2 = 0.5 * np.log( (e_j1 + pz_j1) / (e_j1 - pz_j1)), 0.5 * np.log((e_j2 + pz_j2) / (e_j2 - pz_j2))
+        phi_j1, phi_j2 = np.arctan2(py_j1, px_j1), np.arctan2(py_j2, px_j2)    
+        delta_R = np.sqrt((phi_j1 - phi_j2)**2 + (eta_j1 - eta_j2)**2)   
+        mjj = torch.sqrt((e_j1 + e_j2)**2 - (px_j1 + px_j2)**2 - (py_j1 + py_j2)**2 - (pz_j1 + pz_j2)**2) 
+        
+        all_feats = torch.concat([mjj[:, None], delta_R[:, None],  
+                                  pt_j1[:, None], eta_j1[:, None], phi_j1[:, None], m_j1[:, None],
+                                  pt_j2[:, None], eta_j2[:, None], phi_j2[:, None], m_j2[:, None],
+                                  px_j1[:, None], py_j1[:, None], pz_j1[:, None], e_j1[:, None],
+                                  px_j2[:, None], py_j2[:, None], pz_j2[:, None], e_j2[:, None]], dim=-1)
+        return all_feats
+
+    source, target, background = get_features(lhco.source), get_features(lhco.target), get_features(lhco.background)
+    trajectories = []
+    for trajectory in pipeline.trajectories: trajectories.append(get_features(trajectory))
+    trajectories = torch.stack(trajectories, dim=0)
+
+    assert time_stop_feature in dic, f'Feature {time_stop_feature} not in {dic.keys()}'
+    x = torch.mean(trajectories[...,dic[time_stop_feature]], dim=-1) - background[...,dic[time_stop_feature]].mean()
+    idx = torch.argmin(torch.abs(x))
+    interpolation = trajectories[idx]  
+    mask = (interpolation[...,0] > mass_window[0]) & (interpolation[...,0] < mass_window[1])
+    mask_back = (background[...,0] > mass_window[0]) & (background[...,0] < mass_window[1])
+
+    fig, axs = plt.subplots(2, len(features), figsize=figsize, gridspec_kw={'height_ratios': [len(features), 1]})
+    
+    for i,f in enumerate([dic[f] for f in features if f in dic]):
+        b = np.arange(*bins[i])
+        
+        # First row: Plotting the ratio of histograms
+        ax = axs[0, i]
+        ax.hist(source[...,f], bins=b, histtype='step', color='darkred', label='SB1 (source)', log=log, density=density)
+        ax.hist(trajectories[N//4][...,f], bins=b, histtype='step', color='darkred', ls=':', lw=0.75, label='t=0.25', log=log, density=density)
+        ax.hist(interpolation[mask][...,f], bins=b, histtype='step', color='k', label='t=0.5', log=log, density=density)
+        ax.hist(trajectories[3*N//4][...,f], bins=b, histtype='step', color='purple', ls=':', lw=0.75, label='t=0.75', log=log, density=density)
+        ax.hist(trajectories[-1][...,f], bins=b, histtype='step', color='darkblue', ls=':', lw=0.75, label='t=1',log=log, density=density)
+        ax.hist(target[...,f], bins=b, histtype='step', color='darkblue',  label='SB2 (target)', log=log, density=density)
+        ax.hist(background[mask_back][...,f],bins=b, histtype='stepfilled', color='gray', alpha=0.3, label='SR', log=log, density=density)
+        ax.set_xticklabels([])   
+        if f == 0: ax.legend(loc='lower left', fontsize=6)
+
+        # Second row: Plotting the ratio of histograms
+        counts_interpolation, _ = np.histogram(interpolation[mask][...,f], bins=b, density=density)
+        counts_background, _ = np.histogram(background[mask_back][...,f], bins=b, density=density)
+        ratio_interpolation = np.divide(counts_interpolation, counts_background, out=np.zeros_like(counts_interpolation), where=counts_background!=0)
+
+        ax_ratio = axs[1, i]
+        ax_ratio.plot(b[:-1], ratio_interpolation, drawstyle='steps-post', color='k')
+        ax_ratio.set_ylim(0.8, 1.2, 0) 
+        ax_ratio.set_xlabel(features[i])
+        ax_ratio.axhline(1, color='gray', linestyle='-', lw=0.75)
+        ax_ratio.axhline(0.9, color='gray', linestyle='--', lw=0.75)
+        ax_ratio.axhline(1.1, color='gray', linestyle='--', lw=0.75)
+
+        for tick in ax_ratio.xaxis.get_major_ticks(): tick.label.set_fontsize(9)
+        for tick in ax_ratio.yaxis.get_major_ticks(): tick.label.set_fontsize(9)  
+        ax_ratio.set_yticks([0.8,  0.9,  1,  1.1,  1.2])
+    
+    if save_path is not None: plt.savefig(save_path)
+    if show: plt.show()
+    plt.close()
+
+
 
 
 def plot_interpolation_combined(lhco, pipeline_fwd, pipeline_bwd, mass_window, figsize=(14,6), 
@@ -144,6 +232,7 @@ def plot_interpolation_combined(lhco, pipeline_fwd, pipeline_bwd, mass_window, f
     #...combined interpolation:
     interpolation = torch.cat([interpolation_fwd, interpolation_bwd], dim=0)
     mask = (interpolation[...,0] > mass_window[0]) & (interpolation[...,0] < mass_window[1])
+    mask_bask = (lhco.background[...,0] > mass_window[0]) & (lhco.background[...,0] < mass_window[1])
 
     #...plotting:
 
@@ -162,7 +251,7 @@ def plot_interpolation_combined(lhco, pipeline_fwd, pipeline_bwd, mass_window, f
             ax.hist(pipeline_fwd.trajectories[-1][...,f], bins=b, histtype='step', color='darkred', label=r'$t=1$ (SB$_1\to$ SB$_2$)', log=log, density=density)
             ax.hist(lhco.target[...,f], bins=b, histtype='stepfilled', color='darkblue', alpha=0.3, label=r'SB$_2$', log=log, density=density)
         if f!=0: ax.hist(interpolation[mask][...,f], bins=b, histtype='step', color='k', log=log, density=density)
-        ax.hist(lhco.background[...,f],bins=b, histtype='stepfilled', color='gray', alpha=0.3, label='SR', log=log, density=density)
+        ax.hist(lhco.background[mask_bask][...,f],bins=b, histtype='stepfilled', color='gray', alpha=0.3, label='SR', log=log, density=density)
         ax.set_xticklabels([]) 
         if f==0: 
             if log: ax.set_ylim(1e-6, 1e-1)
@@ -174,7 +263,7 @@ def plot_interpolation_combined(lhco, pipeline_fwd, pipeline_bwd, mass_window, f
         counts_fwd_target, _ = np.histogram(pipeline_fwd.trajectories[-1][...,f], bins=b, density=density)
         counts_bwd_target, _ = np.histogram(pipeline_bwd.trajectories[-1][...,f], bins=b, density=density)
         counts_interpolation, _ = np.histogram(interpolation[mask][...,f], bins=b, density=density)
-        counts_background, _ = np.histogram(lhco.background[...,f], bins=b, density=density)
+        counts_background, _ = np.histogram(lhco.background[mask_bask][...,f], bins=b, density=density)
         
         # Ratio plots:
         ratio_sb1 = np.divide(counts_bwd_target, counts_sb1, out=np.zeros_like(counts_interpolation), where=counts_sb1!=0)
@@ -256,7 +345,8 @@ def plot_interpolation_combined_corner(lhco,
     #...combined interpolation:
     interpolation = torch.cat([interpolation_fwd, interpolation_bwd], dim=0)
     mask = (interpolation[...,0] > mass_window[0]) & (interpolation[...,0] < mass_window[1])
-   
+    mask_bask = (lhco.background[...,0] > mass_window[0]) & (lhco.background[...,0] < mass_window[1])
+
     # ...plotting:
     fig = plt.figure(figsize=figsize)
     num_features = len(features)
@@ -271,7 +361,7 @@ def plot_interpolation_combined_corner(lhco,
             # Diagonal: 1D histograms
             if i == j:
                 ax.hist(interpolation[mask][...,i], bins=bins_i, histtype='step', color=color, lw=lw, ls=ls, log=log, density=density)
-                ax.hist(lhco.background[...,i], bins=bins_i, histtype='stepfilled', alpha=0.4, color='slategray', log=log, density=density)
+                ax.hist(lhco.background[mask_bask][...,i], bins=bins_i, histtype='stepfilled', alpha=0.4, color='slategray', log=log, density=density)
                 ax.set_ylabel("Density" if i == 0 else "")
                 if i==0: ax.set_ylim(0, 0.005)  
                 ax.set_xlim(bins_i[0], bins_i[-1])
@@ -282,8 +372,8 @@ def plot_interpolation_combined_corner(lhco,
                 data_i = interpolation[mask][...,i].cpu().numpy()
                 data_j = interpolation[mask][...,j].cpu().numpy()
                 contour_plot(ax, data_j, data_i, bins=(bins_j, bins_i), color=color, lw=lw, ls=ls, filled=filled_contours)
-                data_i = lhco.background[...,i].cpu().numpy()
-                data_j = lhco.background[...,j].cpu().numpy()
+                data_i = lhco.background[mask_bask][...,i].cpu().numpy()
+                data_j = lhco.background[mask_bask][...,j].cpu().numpy()
                 contour_plot(ax, data_j, data_i, bins=(bins_j, bins_i), color='bone_r', filled=~filled_contours)
                 if j==0: ax.set_ylabel(features[i])
                 ax.set_xlim(bins_j[0], bins_j[-1])
@@ -307,7 +397,7 @@ def plot_interpolation_combined_corner(lhco,
         b = np.arange(*bins[f])
         ax_ratio = plt.subplot(gs[num_features, f])
         counts_interpolation, _ = np.histogram(interpolation[mask][...,f], bins=b, density=density)
-        counts_background, _ = np.histogram(lhco.background[...,f], bins=b, density=density)
+        counts_background, _ = np.histogram(lhco.background[mask_bask][...,f], bins=b, density=density)
         
         # Ratio plots:
         ratio_interpolation = np.divide(counts_interpolation, counts_background, out=np.zeros_like(counts_interpolation), where=counts_background!=0)
@@ -367,7 +457,8 @@ def plot_marginal_fits_corner(lhco,
     #...combined interpolation:
     interpolation = torch.cat([interpolation_fwd, interpolation_bwd], dim=0)
     mask = (interpolation[...,0] > mass_window[0]) & (interpolation[...,0] < mass_window[1])
-   
+    mask_bask = (lhco.background[...,0] > mass_window[0]) & (lhco.background[...,0] < mass_window[1])
+
     # ...plotting:
     fig = plt.figure(figsize=figsize)
     num_features = len(features)
