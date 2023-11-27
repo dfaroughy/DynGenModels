@@ -1,0 +1,138 @@
+import torch
+import numpy as np
+import sys
+
+from DynGenModels.trainer.trainer import DynGenModelTrainer
+from DynGenModels.configs.lhco_configs import LHCOlympics_LowLevel_MLP_CondFlowMatch as Configs
+
+CUDA = 'cuda:{}'.format(sys.argv[1]) if torch.cuda.is_available() else 'cpu'
+BATCH_SIZE = int(sys.argv[2])
+LR = float(sys.argv[3])
+DIM_HIDDEN = int(sys.argv[4])
+NUM_LAYERS = int(sys.argv[5])
+EXCHANGE_TARGET_WITH_SOURCE = bool(int(sys.argv[6]))
+DYNAMICS = sys.argv[7]
+SIGMA = float(sys.argv[8])
+SB1_MIN = float(sys.argv[9])
+SB1_MAX = float(sys.argv[10])
+SB2_MIN = float(sys.argv[11])
+SB2_MAX = float(sys.argv[12])
+NUM_DIJETS = int(sys.argv[13])
+
+configs = Configs(# data:
+                  DATA = 'LHCOlympicsLowLevel',
+                  dataset = '../../data/LHCOlympics2020/events_anomalydetection_low_level_4mom.h5', 
+                  features = ['px_j1', 'py_j1', 'pz_j1', 'e_j1', 'px_j2', 'py_j2', 'pz_j2', 'e_j2'],
+                  cuts_sideband_low = {'mjj': [SB1_MIN, SB1_MAX]},  
+                  cuts_sideband_high = {'mjj': [SB2_MIN, SB2_MAX]}, 
+                  preprocess = ['normalize'],                            
+                  num_dijets = NUM_DIJETS,  
+                  dim_input = 8,
+                  # training params:   
+                  DEVICE = CUDA,
+                  EPOCHS = 5000,
+                  batch_size = BATCH_SIZE,
+                  print_epochs = 20,
+                  early_stopping = 100,
+                  min_epochs = 1000,
+                  data_split_fracs = [0.85, 0.15, 0.0],
+                  lr = LR,
+                  optimizer = 'Adam',
+                  fix_seed = 12345,
+                  # model params:
+                  DYNAMICS = DYNAMICS,
+                  MODEL = 'MLP_backward' if EXCHANGE_TARGET_WITH_SOURCE else 'MLP_forward',
+                  dim_hidden = DIM_HIDDEN,
+                  num_layers = NUM_LAYERS,
+                  sigma = SIGMA,
+                  t0 = 0.0,
+                  t1 = 1.0,
+                  # sampling params:
+                  solver = 'midpoint',
+                  num_sampling_steps = 1000
+                )
+
+#...set working directory for results:
+
+configs.set_workdir(path='../../results', save_config=True)
+
+#...define dataset and model:
+
+from DynGenModels.datamodules.lhco.datasets import LHCOlympicsLowLevelDataset 
+from DynGenModels.datamodules.lhco.dataloader import LHCOlympicsDataLoader 
+from DynGenModels.models.deep_nets import MLP
+
+if DYNAMICS == 'OptimalTransportFlowMatching':
+  from DynGenModels.dynamics.cnf.condflowmatch import OptimalTransportFlowMatching as dynamics
+
+if DYNAMICS == 'SchrodingerBridgeFlowMatching':
+  from DynGenModels.dynamics.cnf.condflowmatch import SchrodingerBridgeFlowMatching as dynamics
+
+lhco = LHCOlympicsLowLevelDataset(configs, exchange_target_with_source=EXCHANGE_TARGET_WITH_SOURCE)
+cfm = DynGenModelTrainer(dynamics = dynamics(configs),
+                         model = MLP(configs), 
+                         dataloader = LHCOlympicsDataLoader(lhco, configs), 
+                         configs = configs)
+
+#...train model:
+
+cfm.train()
+
+#...sample from model:
+
+from DynGenModels.pipelines.SamplingPipeline import FlowMatchPipeline 
+from DynGenModels.datamodules.lhco.dataprocess import PreProcessLHCOlympicsLowLevelData, PostProcessLHCOlympicsLowLevelData
+
+pipeline = FlowMatchPipeline(trained_model=cfm, 
+                             configs=configs, 
+                             preprocessor=PreProcessLHCOlympicsLowLevelData,
+                             postprocessor=PostProcessLHCOlympicsLowLevelData,
+                             best_epoch_model=True)
+
+pipeline.generate_samples(input_source=lhco.source)
+
+#...plot results:
+
+from utils import plot_interpolation_low_level
+
+mjj_buffer = 50.0
+
+plot_interpolation_low_level(lhco, pipeline, 
+                             time_stop_feature='mjj',
+                             features=['mjj', 'px_j1', 'py_j1', 'pz_j1', 'e_j1'],
+                             bins=[(SB1_MIN-100, SB2_MAX+100, 40), (-2000, 2000, 75), (-2000, 2000, 75), (-5000, 5000, 150), (600, 4000, 50)], 
+                             figsize=(22, 4.5),
+                             mass_window=[SB1_MAX + mjj_buffer, SB2_MIN - mjj_buffer],
+                             log=False, 
+                             density=True,
+                             save_path=configs.workdir+'/interpolation_low_level_j1.png')
+
+plot_interpolation_low_level(lhco, pipeline, 
+                             time_stop_feature='mjj',
+                             features=['mjj', 'px_j2', 'py_j2', 'pz_j2', 'e_j2'],
+                             bins=[(SB1_MIN-100, SB2_MAX+100, 40), (-2000, 2000, 75), (-2000, 2000, 75), (-5000, 5000, 150), (600, 4000, 50)], 
+                             figsize=(22, 4.5),
+                             mass_window=[SB1_MAX + mjj_buffer, SB2_MIN - mjj_buffer],
+                             log=False, 
+                             density=True,
+                             save_path=configs.workdir+'/interpolation_low_level_j2.png')
+
+plot_interpolation_low_level(lhco, pipeline, 
+                             time_stop_feature='mjj',
+                             features=['mjj', 'delta_R', 'pt_j1', 'eta_j1', 'phi_j1'],
+                             bins=[(2700, 4200, 15), (2.5, 4.5, 0.02), (1000, 2000, 10), (-3, 3, 0.075), (-3.5, 3.5, 0.1)], 
+                             figsize=(22, 4.5),
+                             mass_window=[SB1_MAX + mjj_buffer, SB2_MIN - mjj_buffer], 
+                             log=False, 
+                             density=True,
+                             save_path=configs.workdir+'/interpolation_high_level_j1.png')
+
+plot_interpolation_low_level(lhco, pipeline, 
+                             time_stop_feature='mjj',
+                             features=['m_j1', 'pt_j2', 'eta_j2', 'phi_j2',  'm_j2'],
+                             bins=[(0, 1200, 15), (1000, 2000, 10), (-3, 3, 0.075), (-3.5, 3.5, 0.1),(0, 1200, 15)], 
+                             figsize=(22, 4.5),
+                             mass_window=[SB1_MAX + mjj_buffer, SB2_MIN - mjj_buffer], 
+                             log=False, 
+                             density=True,
+                             save_path=configs.workdir+'/interpolation_high_level_j2.png')

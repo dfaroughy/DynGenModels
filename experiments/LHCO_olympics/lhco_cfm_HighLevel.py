@@ -5,7 +5,7 @@ import sys
 from DynGenModels.trainer.trainer import DynGenModelTrainer
 from DynGenModels.configs.lhco_configs import LHCOlympics_HighLevel_MLP_CondFlowMatch as Configs
 
-CUDA = 'cuda:{}'.format(sys.argv[1])
+CUDA = 'cuda:{}'.format(sys.argv[1]) if torch.cuda.is_available() else 'cpu'
 BATCH_SIZE = int(sys.argv[2])
 LR = float(sys.argv[3])
 DIM_HIDDEN = int(sys.argv[4])
@@ -26,13 +26,14 @@ configs = Configs(# data:
                   cuts_sideband_high = {'mjj': [SB2_MIN, SB2_MAX]}, 
                   preprocess = ['normalize'],                            
                   num_dijets = NUM_DIJETS,  
+                  dim_input = 5,
                   # training params:   
                   DEVICE = CUDA,
                   EPOCHS = 5000,
                   batch_size = BATCH_SIZE,
                   print_epochs = 20,
-                  early_stopping = 50,
-                  min_epochs = 500,
+                  early_stopping = 100,
+                  min_epochs = 1500,
                   data_split_fracs = [0.85, 0.15, 0.0],
                   lr = LR,
                   optimizer = 'Adam',
@@ -80,22 +81,23 @@ cfm.train()
 #...sample from model:
 
 from DynGenModels.pipelines.SamplingPipeline import FlowMatchPipeline 
-from DynGenModels.datamodules.lhco.dataprocess import PostProcessLHCOlympicsHighLevelData
+from DynGenModels.datamodules.lhco.dataprocess import PreProcessLHCOlympicsHighLevelData, PostProcessLHCOlympicsHighLevelData
 
 pipeline = FlowMatchPipeline(trained_model=cfm, 
                              configs=configs, 
+                             preprocessor=PreProcessLHCOlympicsHighLevelData,
                              postprocessor=PostProcessLHCOlympicsHighLevelData,
                              best_epoch_model=True)
 
-pipeline.generate_samples(input_source=lhco.source_preprocess)
+pipeline.generate_samples(input_source=lhco.source)
 
 #...plot results:
 
 from utils import plot_interpolation
 
 plot_interpolation(lhco, pipeline, figsize=(18, 4.5),
-                    mass_window=[configs.cuts_sideband_low['mjj'][1], configs.cuts_sideband_high['mjj'][0]], 
-                    bins=[(2500, 5000, 40), (0, 1400, 50), (-1250, 1250, 100), (-0.25, 1.25, 0.05), (-0.25, 1.25, 0.05)], 
+                    mass_window=[SB1_MAX, SB2_MIN], 
+                    bins=[(SB1_MIN-100, SB2_MAX+100, 40), (0, 1200, 50), (-1250, 1250, 100), (-0.25, 1.25, 0.05), (-0.25, 1.25, 0.05)], 
                     log=False, 
                     density=True,
                     save_path=configs.workdir+'/interpolation.png')
