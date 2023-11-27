@@ -6,11 +6,11 @@ from scipy.ndimage import gaussian_filter
 import matplotlib.ticker as ticker
 
 
-def load_bridge_pipelines(model_fwd,
-                          model_bwd, 
-                          bridge, 
-                          device,
+def load_bridge_pipelines(bridge, 
+                          model_fwd,
+                          model_bwd=None, 
                           num_samples=100000000,
+                          device='cpu',
                           model='best'):
 
     #...load forward bridge:
@@ -32,22 +32,27 @@ def load_bridge_pipelines(model_fwd,
     cfm_fwd.load(model=model)
 
     #...load backward bridge:
+    if model_bwd is not None:
 
-    from DynGenModels.configs.lhco_configs import LHCOlympics_HighLevel_MLP_CondFlowMatch as Configs
-    from DynGenModels.datamodules.lhco.datasets import LHCOlympicsHighLevelDataset
-    from DynGenModels.datamodules.lhco.dataloader import LHCOlympicsDataLoader 
-    from DynGenModels.models.deep_nets import MLP
-    from DynGenModels.trainer.trainer import DynGenModelTrainer
+        from DynGenModels.configs.lhco_configs import LHCOlympics_HighLevel_MLP_CondFlowMatch as Configs
+        from DynGenModels.datamodules.lhco.datasets import LHCOlympicsHighLevelDataset
+        from DynGenModels.datamodules.lhco.dataloader import LHCOlympicsDataLoader 
+        from DynGenModels.models.deep_nets import MLP
+        from DynGenModels.trainer.trainer import DynGenModelTrainer
 
-    configs_bwd = Configs().load(model_bwd + '/config.json')
-    configs_bwd.DEVICE = device  
-    configs_bwd.workdir = model_bwd
-    lhco_bwd = LHCOlympicsHighLevelDataset(configs_bwd, exchange_target_with_source=True)
-    cfm_bwd = DynGenModelTrainer(dynamics = bridge(configs_bwd),
-                                 model = MLP(configs_bwd), 
-                                 dataloader = LHCOlympicsDataLoader(lhco_bwd, configs_bwd), 
-                                 configs = configs_bwd)
-    cfm_bwd.load(model=model)
+        configs_bwd = Configs().load(model_bwd + '/config.json')
+        configs_bwd.DEVICE = device  
+        configs_bwd.workdir = model_bwd
+        lhco_bwd = LHCOlympicsHighLevelDataset(configs_bwd, exchange_target_with_source=True)
+        cfm_bwd = DynGenModelTrainer(dynamics = bridge(configs_bwd),
+                                    model = MLP(configs_bwd), 
+                                    dataloader = LHCOlympicsDataLoader(lhco_bwd, configs_bwd), 
+                                    configs = configs_bwd)
+        cfm_bwd.load(model=model)
+    else:
+        configs_bwd = None
+        lhco_bwd = None
+        cfm_bwd = None
 
     #...get pipelines:
 
@@ -59,17 +64,18 @@ def load_bridge_pipelines(model_fwd,
                                      preprocessor=PreProcessLHCOlympicsHighLevelData,
                                      postprocessor=PostProcessLHCOlympicsHighLevelData,
                                      best_epoch_model=True)
+    if model_bwd is not None:
+        pipeline_bwd = FlowMatchPipeline(trained_model=cfm_bwd, 
+                                         configs=configs_bwd, 
+                                         preprocessor=PreProcessLHCOlympicsHighLevelData,
+                                         postprocessor=PostProcessLHCOlympicsHighLevelData,
+                                         best_epoch_model=True)
 
-    pipeline_bwd = FlowMatchPipeline(trained_model=cfm_bwd, 
-                                     configs=configs_bwd, 
-                                     preprocessor=PreProcessLHCOlympicsHighLevelData,
-                                     postprocessor=PostProcessLHCOlympicsHighLevelData,
-                                     best_epoch_model=True)
 
     #...generate samples:
 
     pipeline_fwd.generate_samples(input_source=lhco_fwd.source[:num_samples])
-    pipeline_bwd.generate_samples(input_source=lhco_bwd.source[:num_samples])
+    if model_bwd is not None: pipeline_bwd.generate_samples(input_source=lhco_bwd.source[:num_samples])
 
     return pipeline_fwd, pipeline_bwd, lhco_fwd, lhco_bwd
 
