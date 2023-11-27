@@ -11,4 +11,4 @@ class TorchdynWrapper(torch.nn.Module):
         self.mask = mask
     def forward(self, t, x):
         t = t.repeat(x.shape[:-1]+(1,), 1)
-        return self.nn(t=t, x=x, mask=self.mask, sampling=True)
+        return self.nn(t=t, x=x, mask=self.mask)

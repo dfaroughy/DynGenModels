@@ -8,7 +8,9 @@ from DynGenModels.trainer.configs import Training_Configs
 class MLP_Configs(Training_Configs):
     MODEL : str = 'MLP'
     dim_hidden : int = 128   
+    dim_time_emb : int = None
     num_layers : int = 3
+    activation : str = 'ReLU'
 
 @dataclass
 class ResNet_Configs(Training_Configs):
