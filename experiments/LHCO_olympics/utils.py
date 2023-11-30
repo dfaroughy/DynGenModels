@@ -140,12 +140,13 @@ def plot_interpolation(lhco, pipeline,  mass_window, figsize=(14,6),
 
 
 
-def plot_interpolation_low_level(lhco, pipeline,  mass_window,  subleading=False,  time_stop_feature='mjj', figsize=(12,6), 
+def plot_interpolation_low_level(lhco, pipeline,  mass_window,  time_stop_feature='mjj', figsize=(12,6), 
                                 features=['mjj', 'px_j1', 'py_j1', 'pz_j1', 'e_j1'],
                                 bins=[(2700, 4200, 40), (-2000, 2000, 100), (-2000, 2000, 100), (-5000, 5000, 200), (600, 4000, 100)], 
                                 log=True, density=True, save_path=None, show=False):    
-    dic = {'mjj':0, 'delta_R':1, 'pt_j1':2, 'eta_j1':3, 'phi_j1':4, 'm_j1':5, 'pt_j2':6, 'eta_j2':7, 'phi_j2':8, 'm_j2':9, 
-           'px_j1':10, 'py_j1':11, 'pz_j1':12, 'e_j1':13, 'px_j2':14, 'py_j2':15, 'pz_j2':16, 'e_j2':17}
+    dic = {'mjj':0, 'delta_Rjj':1, 'delta_mjj':2, 'delta_ptjj':3, 'delta_etajj':4,
+           'pt_j1':5, 'eta_j1':6, 'phi_j1':7, 'm_j1':8, 'pt_j2':9, 'eta_j2':10, 'phi_j2':11, 'm_j2':12,
+           'px_j1':13, 'py_j1':14, 'pz_j1':15, 'e_j1':16, 'px_j2':17, 'py_j2':18, 'pz_j2':19, 'e_j2':20}
 
     N = pipeline.num_sampling_steps
 
@@ -157,10 +158,13 @@ def plot_interpolation_low_level(lhco, pipeline,  mass_window,  subleading=False
         pt_j1,  pt_j2 = torch.sqrt(px_j1**2 + py_j1**2), torch.sqrt(px_j2**2 + py_j2**2)  
         eta_j1, eta_j2 = 0.5 * np.log( (e_j1 + pz_j1) / (e_j1 - pz_j1)), 0.5 * np.log((e_j2 + pz_j2) / (e_j2 - pz_j2))
         phi_j1, phi_j2 = np.arctan2(py_j1, px_j1), np.arctan2(py_j2, px_j2)    
-        delta_R = np.sqrt((phi_j1 - phi_j2)**2 + (eta_j1 - eta_j2)**2)   
+        delta_Rjj = np.sqrt((phi_j1 - phi_j2)**2 + (eta_j1 - eta_j2)**2)   
         mjj = torch.sqrt((e_j1 + e_j2)**2 - (px_j1 + px_j2)**2 - (py_j1 + py_j2)**2 - (pz_j1 + pz_j2)**2) 
-        
-        all_feats = torch.concat([mjj[:, None], delta_R[:, None],  
+        delta_mjj = torch.abs(m_j2 - m_j1)
+        delta_ptjj = torch.abs(pt_j2 - pt_j1)
+        delta_etajj = torch.abs(eta_j2 - eta_j1)
+
+        all_feats = torch.concat([mjj[:, None], delta_Rjj[:, None], delta_mjj[:, None], delta_ptjj[:, None], delta_etajj[:, None],
                                   pt_j1[:, None], eta_j1[:, None], phi_j1[:, None], m_j1[:, None],
                                   pt_j2[:, None], eta_j2[:, None], phi_j2[:, None], m_j2[:, None],
                                   px_j1[:, None], py_j1[:, None], pz_j1[:, None], e_j1[:, None],
@@ -187,10 +191,10 @@ def plot_interpolation_low_level(lhco, pipeline,  mass_window,  subleading=False
         # First row: Plotting the ratio of histograms
         ax = axs[0, i]
         ax.hist(source[...,f], bins=b, histtype='step', color='darkred', label='SB1 (source)', log=log, density=density)
-        ax.hist(trajectories[N//4][...,f], bins=b, histtype='step', color='darkred', ls=':', lw=0.75, label='t=0.25', log=log, density=density)
-        ax.hist(interpolation[mask][...,f], bins=b, histtype='step', color='k', label='t=0.5', log=log, density=density)
-        ax.hist(trajectories[3*N//4][...,f], bins=b, histtype='step', color='purple', ls=':', lw=0.75, label='t=0.75', log=log, density=density)
-        ax.hist(trajectories[-1][...,f], bins=b, histtype='step', color='darkblue', ls=':', lw=0.75, label='t=1',log=log, density=density)
+        # ax.hist(trajectories[N//4][...,f], bins=b, histtype='step', color='darkred', ls=':', lw=0.75, label='t=0.25', log=log, density=density)
+        ax.hist(interpolation[mask][...,f], bins=b, histtype='step', color='k', label='interpolation (t=0.5)', log=log, density=density)
+        # ax.hist(trajectories[3*N//4][...,f], bins=b, histtype='step', color='purple', ls=':', lw=0.75, label='t=0.75', log=log, density=density)
+        # ax.hist(trajectories[-1][...,f], bins=b, histtype='step', color='darkblue', ls=':', lw=0.75, label='t=1',log=log, density=density)
         ax.hist(target[...,f], bins=b, histtype='step', color='darkblue',  label='SB2 (target)', log=log, density=density)
         ax.hist(background[mask_back][...,f],bins=b, histtype='stepfilled', color='gray', alpha=0.3, label='SR', log=log, density=density)
         ax.set_xticklabels([])   

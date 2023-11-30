@@ -36,6 +36,7 @@ class FlowMatchPipeline:
         self.atol = configs.atol if atol is None else atol
         self.rtol = configs.rtol if rtol is None else rtol
         self.device = configs.DEVICE
+        self.augmented = configs.augmented
         self.time_steps = torch.linspace(self.t0, self.t1, self.num_sampling_steps, device=self.device)
         
     @torch.no_grad()
@@ -75,6 +76,8 @@ class FlowMatchPipeline:
                         atol=self.atol if self.solver=='dopri5' else None, 
                         rtol=self.rtol if self.solver=='dopri5' else None)
         
+        if self.augmented: 
+            self.source = torch.cat([self.source, self.source], dim=-1)
         trajectories = node.trajectory(x=self.source.to(self.device), t_span=self.time_steps)
         return trajectories.detach().cpu() 
     

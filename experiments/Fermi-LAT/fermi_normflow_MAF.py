@@ -8,7 +8,7 @@ configs = Configs(# data params:
                  dataset = '../../data/fermi/fermi_data_galactic_coord.npy',
                  features = ['theta', 'phi', 'energy'],
                  preprocess = ['normalize', 'logit_transform', 'standardize'],
-                 cuts = {'theta': [-10., 10.], 'phi': [-5., 10.], 'energy': [1000, 2000]},
+                 cuts = {'theta': [5., 25.], 'phi': [5., 25.], 'energy': [2000, 10000]},
                  data_split_fracs = [0.8, 0.2, 0.0],
                  # training params:
                  DEVICE = 'cuda:3',
@@ -23,13 +23,13 @@ configs = Configs(# data params:
                  # dynamics params:
                  DYNAMICS = 'NormFlow',
                  permutation = 'reverse',
-                 num_transforms = 10,
+                 num_transforms = 3,
                  # model params:
                  num_blocks = 3,
                  dim_hidden = 256, 
                  dropout = 0.1,
-                 num_bins = 40,
-                 tail_bound = 10, 
+                 num_bins = 20,
+                 tail_bound = 20, 
                  use_residual_blocks = False,
                  use_batch_norm = False
                  )
@@ -58,15 +58,18 @@ maf.train()
 #...sample from model:
 
 from DynGenModels.pipelines.SamplingPipeline import NormFlowPipeline
-from DynGenModels.datamodules.fermi.dataprocess import PostProcessFermiData 
+from DynGenModels.datamodules.fermi.dataprocess import PreProcessFermiData, PostProcessFermiData 
 
 pipeline = NormFlowPipeline(trained_model=maf, 
-                            configs=configs, 
+                            preprocessor=PreProcessFermiData,
                             postprocessor=PostProcessFermiData,
-                            num_gen_samples=fermi.target.shape[0],
                             best_epoch_model=True)
 
 #...plot results:
+
+
+pipeline.generate_samples(num=fermi.target.shape[0])
+
 
 from utils import results_plots, results_2D_plots
 

@@ -62,12 +62,13 @@ class ConditionalFlowMatching:
 		self.sigma_min = config.sigma
 		self.t0 = config.t0
 		self.t1 = config.t1
+		self.augmented = config.augmented
 
 	def flowmatcher(self, batch):
 		CFM = ConditionalFlowMatcher(sigma=self.sigma_min)
 		t, xt, ut = CFM.sample_location_and_conditional_flow(batch['source'], batch['target'])
 		self.t = (self.t1 - self.t0) * t[:, None]
-		self.path = xt
+		self.path = torch.concat([xt, batch['source']], dim=-1) if self.augmented else xt
 		self.u = ut
 
 	def loss(self, model, batch):
@@ -86,7 +87,7 @@ class OptimalTransportFlowMatching(ConditionalFlowMatching):
 		OTFM = ExactOptimalTransportConditionalFlowMatcher(sigma=self.sigma_min)
 		t, xt, ut = OTFM.sample_location_and_conditional_flow(batch['source'], batch['target'])
 		self.t = (self.t1 - self.t0) * t[:, None]
-		self.path = xt
+		self.path = torch.concat([xt, batch['source']], dim=-1) if self.augmented else xt
 		self.u = ut
 
 class SchrodingerBridgeFlowMatching(ConditionalFlowMatching):
@@ -95,5 +96,5 @@ class SchrodingerBridgeFlowMatching(ConditionalFlowMatching):
 		SBFM = SchrodingerBridgeConditionalFlowMatcher(sigma=self.sigma_min, ot_method='exact')
 		t, xt, ut = SBFM.sample_location_and_conditional_flow(batch['source'], batch['target'])
 		self.t = (self.t1 - self.t0) * t[:, None]
-		self.path = xt
-		self.u = ut
+		self.path = torch.concat([xt, batch['source']], dim=-1) if self.augmented else xt
+		self.u = ut 

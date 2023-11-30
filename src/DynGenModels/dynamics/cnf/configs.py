@@ -14,6 +14,7 @@ class FlowMatch_Configs:
 class CondFlowMatch_Configs:
     DYNAMICS : str = 'CondFlowMatch'
     sigma : float = 0.1
+    augmented : bool = False
     t0 : float = 0.0
     t1 : float = 1.0
 
