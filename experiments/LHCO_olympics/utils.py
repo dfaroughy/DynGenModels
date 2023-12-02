@@ -1,3 +1,4 @@
+from turtle import back
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
@@ -5,7 +6,7 @@ import matplotlib.gridspec as gridspec
 from scipy.ndimage import gaussian_filter
 import matplotlib.ticker as ticker
 
-
+        
 def load_bridge_pipelines(bridge, 
                           model_fwd,
                           model_bwd=None, 
@@ -80,6 +81,21 @@ def load_bridge_pipelines(bridge,
     return pipeline_fwd, pipeline_bwd, lhco_fwd, lhco_bwd
 
 
+
+def plot_sideband_data(SB1, SR, SB2, subleading_jet=False , features=[r'$p_t$', r'$\eta$', r'$\phi$', r'm'],  bins=(50,50,50,50), density=True, figsize=(10,2)):
+    fig, ax = plt.subplots(1, len(features), figsize=figsize)
+    subleading_jet = int(subleading_jet)
+    for i in range(len(features)):
+        ax[i].hist(SB1[..., i + len(features) * subleading_jet], bins=bins[i], density=density, label='SB 1', color='darkred', histtype='step') 
+        ax[i].hist(SR[...,i + len(features) * subleading_jet], bins=bins[i], density=density, label='SR', color='gray', alpha=0.3)   
+        ax[i].hist(SB2[...,i + len(features) * subleading_jet], bins=bins[i], density=density, label='SB 2', color='darkblue', histtype='step')   
+        ax[i].set_xlabel(features[i]+' {}leading jet'.format('sub-' if subleading_jet else ''))
+        ax[i].legend( loc='upper right', fontsize='7')
+    plt.show()
+    plt.tight_layout()
+    plt.close()
+
+
 def plot_interpolation(lhco, pipeline,  mass_window, figsize=(14,6), 
                        features=[r'$m_{jj}$', r'$m_{j}$ leading', r'$\Delta m_j$', r'$\tau_{21}$ leading',  r'$\tau_{21}$ sub-leading'],
                        bins=[(2500, 5000, 30), (0, 1400, 50), (-1250, 1250, 100), (-0.25, 1.25, 0.025), (-0.25, 1.25, 0.025)], 
@@ -140,48 +156,74 @@ def plot_interpolation(lhco, pipeline,  mass_window, figsize=(14,6),
 
 
 
-def plot_interpolation_low_level(lhco, pipeline,  mass_window,  time_stop_feature='mjj', figsize=(12,6), 
-                                features=['mjj', 'px_j1', 'py_j1', 'pz_j1', 'e_j1'],
+
+def get_features(features, coords='px_py_pz_e'):
+    
+    if coords == 'px_py_pz_e':
+        px_j1, py_j1, pz_j1, e_j1 = features[...,0], features[...,1], features[...,2], features[...,3]
+        px_j2, py_j2, pz_j2, e_j2 = features[...,4], features[...,5], features[...,6], features[...,7]
+        pt_j1,  pt_j2 = torch.sqrt(px_j1**2 + py_j1**2), torch.sqrt(px_j2**2 + py_j2**2)  
+        eta_j1, eta_j2 = 0.5 * np.log( (e_j1 + pz_j1) / (e_j1 - pz_j1)), 0.5 * np.log((e_j2 + pz_j2) / (e_j2 - pz_j2))
+        phi_j1, phi_j2 = np.arctan2(py_j1, px_j1), np.arctan2(py_j2, px_j2) 
+        m_j1 = torch.sqrt(e_j1**2 - px_j1**2 - py_j1**2 - pz_j1**2)
+        m_j2 = torch.sqrt(e_j2**2 - px_j2**2 - py_j2**2 - pz_j2**2)
+    
+    elif coords == 'pt_eta_phi_m':
+        pt_j1, eta_j1, phi_j1, m_j1 = features[...,0], features[...,1], features[...,2], features[...,3]
+        pt_j2, eta_j2, phi_j2, m_j2 = features[...,4], features[...,5], features[...,6], features[...,7]
+        px_j1, px_j2 = pt_j1 * np.cos(phi_j1), pt_j2 * np.cos(phi_j2)
+        py_j1, py_j2 = pt_j1 * np.sin(phi_j1), pt_j2 * np.sin(phi_j2)
+        mt_j1, mt_j2 = np.sqrt(m_j1**2 + pt_j1**2), np.sqrt(m_j2**2 + pt_j2**2)
+        pz_j1, pz_j2 = mt_j1 * np.sinh(eta_j1), mt_j2 * np.sinh(eta_j2)
+        e_j1, e_j2 = np.sqrt(px_j1**2 + py_j1**2 + pz_j1**2 + m_j1**2), np.sqrt(px_j2**2 + py_j2**2 + pz_j2**2 + m_j2**2)        
+
+    delta_phijj = (phi_j1 - phi_j2 + np.pi) % (2 * np.pi) - np.pi
+    delta_etajj = eta_j1 - eta_j2
+    delta_Rjj = np.sqrt(delta_phijj**2 + delta_etajj**2)   
+    mjj = torch.sqrt((e_j1 + e_j2)**2 - (px_j1 + px_j2)**2 - (py_j1 + py_j2)**2 - (pz_j1 + pz_j2)**2) 
+    delta_mjj = m_j1 - m_j2
+    delta_ptjj = pt_j1 - pt_j2
+
+    all_feats = torch.concat([mjj[:, None], delta_Rjj[:, None], delta_mjj[:, None], 
+                             delta_ptjj[:, None], delta_etajj[:, None], delta_phijj[:, None],
+                             pt_j1[:, None], eta_j1[:, None], phi_j1[:, None], m_j1[:, None],
+                             pt_j2[:, None], eta_j2[:, None], phi_j2[:, None], m_j2[:, None],
+                             px_j1[:, None], py_j1[:, None], pz_j1[:, None], e_j1[:, None],
+                             px_j2[:, None], py_j2[:, None], pz_j2[:, None], e_j2[:, None]], dim=-1)
+    return all_feats
+        
+
+def plot_interpolation_low_level(lhco, pipeline,  mass_window, input_coords='px_py_pz_e', time_stop_feature='mjj', figsize=(12,6), 
+                                features=['mjj', 'px_j1', 'py_j1', 'pz_j1', 'e_j1'], display_intermediate_trajectories=False,
                                 bins=[(2700, 4200, 40), (-2000, 2000, 100), (-2000, 2000, 100), (-5000, 5000, 200), (600, 4000, 100)], 
                                 log=True, density=True, save_path=None, show=False):    
-    dic = {'mjj':0, 'delta_Rjj':1, 'delta_mjj':2, 'delta_ptjj':3, 'delta_etajj':4,
-           'pt_j1':5, 'eta_j1':6, 'phi_j1':7, 'm_j1':8, 'pt_j2':9, 'eta_j2':10, 'phi_j2':11, 'm_j2':12,
-           'px_j1':13, 'py_j1':14, 'pz_j1':15, 'e_j1':16, 'px_j2':17, 'py_j2':18, 'pz_j2':19, 'e_j2':20}
+    
+    dic = {'mjj':0, 'delta_Rjj':1, 'delta_mjj':2, 'delta_ptjj':3, 'delta_etajj':4, 'delta_phijj':5,
+           'pt_j1':6, 'eta_j1':7, 'phi_j1':8, 'm_j1':9, 'pt_j2':10, 'eta_j2':11, 'phi_j2':12, 'm_j2':13,
+           'px_j1':14, 'py_j1':15, 'pz_j1':16, 'e_j1':17, 'px_j2':18, 'py_j2':19, 'pz_j2':20, 'e_j2':21}
 
     N = pipeline.num_sampling_steps
 
-    def get_features(features):
-        px_j1, py_j1, pz_j1, e_j1 = features[...,0], features[...,1], features[...,2], features[...,3]
-        px_j2, py_j2, pz_j2, e_j2 = features[...,4], features[...,5], features[...,6], features[...,7]
-        m_j1 = torch.sqrt(e_j1**2 - px_j1**2 - py_j1**2 - pz_j1**2)
-        m_j2 = torch.sqrt(e_j2**2 - px_j2**2 - py_j2**2 - pz_j2**2)
-        pt_j1,  pt_j2 = torch.sqrt(px_j1**2 + py_j1**2), torch.sqrt(px_j2**2 + py_j2**2)  
-        eta_j1, eta_j2 = 0.5 * np.log( (e_j1 + pz_j1) / (e_j1 - pz_j1)), 0.5 * np.log((e_j2 + pz_j2) / (e_j2 - pz_j2))
-        phi_j1, phi_j2 = np.arctan2(py_j1, px_j1), np.arctan2(py_j2, px_j2)    
-        delta_Rjj = np.sqrt((phi_j1 - phi_j2)**2 + (eta_j1 - eta_j2)**2)   
-        mjj = torch.sqrt((e_j1 + e_j2)**2 - (px_j1 + px_j2)**2 - (py_j1 + py_j2)**2 - (pz_j1 + pz_j2)**2) 
-        delta_mjj = torch.abs(m_j2 - m_j1)
-        delta_ptjj = torch.abs(pt_j2 - pt_j1)
-        delta_etajj = torch.abs(eta_j2 - eta_j1)
-
-        all_feats = torch.concat([mjj[:, None], delta_Rjj[:, None], delta_mjj[:, None], delta_ptjj[:, None], delta_etajj[:, None],
-                                  pt_j1[:, None], eta_j1[:, None], phi_j1[:, None], m_j1[:, None],
-                                  pt_j2[:, None], eta_j2[:, None], phi_j2[:, None], m_j2[:, None],
-                                  px_j1[:, None], py_j1[:, None], pz_j1[:, None], e_j1[:, None],
-                                  px_j2[:, None], py_j2[:, None], pz_j2[:, None], e_j2[:, None]], dim=-1)
-        return all_feats
-
-    source, target, background = get_features(lhco.source), get_features(lhco.target), get_features(lhco.background)
+    source, target, background = get_features(lhco.source, input_coords), get_features(lhco.target, input_coords), get_features(lhco.background, input_coords)
     trajectories = []
-    for trajectory in pipeline.trajectories: trajectories.append(get_features(trajectory))
+    for trajectory in pipeline.trajectories: trajectories.append(get_features(trajectory, input_coords))
     trajectories = torch.stack(trajectories, dim=0)
 
     assert time_stop_feature in dic, f'Feature {time_stop_feature} not in {dic.keys()}'
     x = torch.mean(trajectories[...,dic[time_stop_feature]], dim=-1) - background[...,dic[time_stop_feature]].mean()
     idx = torch.argmin(torch.abs(x))
     interpolation = trajectories[idx]  
-    mask = (interpolation[...,0] > mass_window[0]) & (interpolation[...,0] < mass_window[1])
+
+    #...get interpolation "time"
+    interpolation_time = round(float(torch.tensor(idx/N)),2)
+    mask_inter = (interpolation[...,0] > mass_window[0]) & (interpolation[...,0] < mass_window[1])
     mask_back = (background[...,0] > mass_window[0]) & (background[...,0] < mass_window[1])
+    print(r' interpolation time $t={}$'.format(interpolation_time))
+
+    source =  source.cpu().numpy()
+    target = target.cpu().numpy()
+    background = background[mask_back].cpu().numpy()
+    interpolation = interpolation[mask_inter].cpu().numpy()
 
     fig, axs = plt.subplots(2, len(features), figsize=figsize, gridspec_kw={'height_ratios': [len(features), 1]})
     
@@ -191,18 +233,20 @@ def plot_interpolation_low_level(lhco, pipeline,  mass_window,  time_stop_featur
         # First row: Plotting the ratio of histograms
         ax = axs[0, i]
         ax.hist(source[...,f], bins=b, histtype='step', color='darkred', label='SB1 (source)', log=log, density=density)
-        # ax.hist(trajectories[N//4][...,f], bins=b, histtype='step', color='darkred', ls=':', lw=0.75, label='t=0.25', log=log, density=density)
-        ax.hist(interpolation[mask][...,f], bins=b, histtype='step', color='k', label='interpolation (t=0.5)', log=log, density=density)
-        # ax.hist(trajectories[3*N//4][...,f], bins=b, histtype='step', color='purple', ls=':', lw=0.75, label='t=0.75', log=log, density=density)
-        # ax.hist(trajectories[-1][...,f], bins=b, histtype='step', color='darkblue', ls=':', lw=0.75, label='t=1',log=log, density=density)
+        if display_intermediate_trajectories: 
+            ax.hist(trajectories[N//4][...,f], bins=b, histtype='step', color='darkred', ls=':', lw=0.75, label='t=0.25', log=log, density=density)
+        ax.hist(interpolation[...,f], bins=b, histtype='step', color='k', ls='--', label='t={} (interpolation)'.format(interpolation_time), log=log, density=density)
+        if display_intermediate_trajectories:
+            ax.hist(trajectories[3*N//4][...,f], bins=b, histtype='step', color='purple', ls=':', lw=0.75, label='t=0.75', log=log, density=density)
+            ax.hist(trajectories[-1][...,f], bins=b, histtype='step', color='darkblue', ls=':', lw=0.75, label='t=1',log=log, density=density)
         ax.hist(target[...,f], bins=b, histtype='step', color='darkblue',  label='SB2 (target)', log=log, density=density)
-        ax.hist(background[mask_back][...,f],bins=b, histtype='stepfilled', color='gray', alpha=0.3, label='SR', log=log, density=density)
+        ax.hist(background[...,f],bins=b, histtype='stepfilled', color='gray', alpha=0.3, label='SR', log=log, density=density)
         ax.set_xticklabels([])   
-        if f == 0: ax.legend(loc='lower left', fontsize=6)
+        if f == 0: ax.legend(loc='upper left', fontsize=6)
 
         # Second row: Plotting the ratio of histograms
-        counts_interpolation, _ = np.histogram(interpolation[mask][...,f], bins=b, density=density)
-        counts_background, _ = np.histogram(background[mask_back][...,f], bins=b, density=density)
+        counts_interpolation, _ = np.histogram(interpolation[...,f], bins=b, density=density)
+        counts_background, _ = np.histogram(background[...,f], bins=b, density=density)
         ratio_interpolation = np.divide(counts_interpolation, counts_background, out=np.zeros_like(counts_interpolation), where=counts_background!=0)
 
         ax_ratio = axs[1, i]
@@ -221,6 +265,89 @@ def plot_interpolation_low_level(lhco, pipeline,  mass_window,  time_stop_featur
     if show: plt.show()
     plt.close()
 
+
+def display_low_level_plot_results(configs, lhco, pipeline, mjj_buffer=0., display_intermediate_trajectories=False):
+
+    plot_interpolation_low_level(lhco, pipeline, 
+                                input_coords = "pt_eta_phi_m",
+                                time_stop_feature='mjj',
+                                display_intermediate_trajectories=display_intermediate_trajectories,
+                                features=['pt_j1', 'eta_j1', 'phi_j1', 'm_j1'],
+                                bins=[(1150, 2500, 20), 
+                                    (-2.5, 2.5, 0.075), 
+                                    (-0.5, 7, 0.075), 
+                                    (0, 1300, 20)], 
+                                figsize=(18, 4.5),
+                                mass_window=[configs.cuts_sideband_low['mjj'][1] + mjj_buffer, configs.cuts_sideband_high['mjj'][0] - mjj_buffer], 
+                                log=False, 
+                                density=True,
+                                save_path=configs.workdir+'/interpolation_low_level_ptepm_j1.png',
+                                show=True)
+
+    plot_interpolation_low_level(lhco, pipeline, 
+                                input_coords = "pt_eta_phi_m",
+                                time_stop_feature='mjj',
+                                display_intermediate_trajectories=display_intermediate_trajectories,
+                                features=['pt_j2', 'eta_j2', 'phi_j2', 'm_j2'],
+                                bins=[(500, 2500, 20), 
+                                    (-2.5, 2.5, 0.075), 
+                                    (-0.5, 7, 0.075), 
+                                    (0, 1300, 20)],
+                                figsize=(18, 4.5),
+                                mass_window=[configs.cuts_sideband_low['mjj'][1] + mjj_buffer, configs.cuts_sideband_high['mjj'][0] - mjj_buffer], 
+                                log=False, 
+                                density=True,
+                                save_path=configs.workdir+'/interpolation_low_level_ptepm_j2.png',
+                                show=True)
+
+    plot_interpolation_low_level(lhco, pipeline, 
+                                input_coords="pt_eta_phi_m",
+                                time_stop_feature='mjj',
+                                display_intermediate_trajectories=display_intermediate_trajectories,
+                                features=['px_j1', 'py_j1', 'pz_j1', 'e_j1'],
+                                bins=[(-2000, 2000, 50),
+                                    (-2000, 2000, 50), 
+                                    (-4000, 4000, 75), 
+                                    (1000, 4000, 30)], 
+                                figsize=(18, 4.5),
+                                mass_window=[configs.cuts_sideband_low['mjj'][1] + mjj_buffer, configs.cuts_sideband_high['mjj'][0] - mjj_buffer], 
+                                log=False, 
+                                density=True,
+                                save_path=configs.workdir+'/interpolation_low_level_pxpypzE_j2.png',
+                                show=True)
+
+    plot_interpolation_low_level(lhco, pipeline, 
+                                input_coords="pt_eta_phi_m",
+                                time_stop_feature='mjj',
+                                display_intermediate_trajectories=display_intermediate_trajectories,
+                                features=['px_j2', 'py_j2', 'pz_j2', 'e_j2'],
+                                bins=[(-2000, 2000, 50),
+                                    (-2000, 2000, 50), 
+                                    (-4000, 4000, 75), 
+                                    (1000, 4000, 30)], 
+                                figsize=(18, 4.5),
+                                mass_window=[configs.cuts_sideband_low['mjj'][1] + mjj_buffer, configs.cuts_sideband_high['mjj'][0] - mjj_buffer], 
+                                log=False, 
+                                density=True,
+                                save_path=configs.workdir+'/interpolation_low_level_pxpypzE_j2.png',
+                                show=True)
+
+    plot_interpolation_low_level(lhco, pipeline, 
+                                input_coords="pt_eta_phi_m",
+                                time_stop_feature='mjj',
+                                display_intermediate_trajectories=display_intermediate_trajectories,
+                                features=['mjj', 'delta_Rjj', 'delta_mjj', 'delta_ptjj', 'delta_etajj'],
+                                bins=[(configs.cuts_sideband_low['mjj'][0] - mjj_buffer, configs.cuts_sideband_high['mjj'][1] + mjj_buffer, 15), 
+                                    (2.5, 4.5, 0.02), 
+                                    (-1000, 1000, 10), 
+                                    (-1000, 1000, 10), 
+                                    (-3, 3, 0.05)], 
+                                figsize=(22, 4.5),
+                                mass_window=[configs.cuts_sideband_low['mjj'][1] + mjj_buffer, configs.cuts_sideband_high['mjj'][0] - mjj_buffer], 
+                                log=True, 
+                                density=True,
+                                save_path=configs.workdir+'/interpolation_high_level_dijet.png',
+                                show=True)
 
 
 

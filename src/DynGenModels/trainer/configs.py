@@ -19,6 +19,7 @@ class Optimizer_Configs:
 class Scheduler_Configs:
     scheduler: str = None
     scheduler_T_max: int = None
+    scheduler_eta_min: float = None
     scheduler_gamma: float = None
     scheduler_step_size: int = None
 

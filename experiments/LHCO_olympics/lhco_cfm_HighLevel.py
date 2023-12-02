@@ -5,35 +5,39 @@ import sys
 from DynGenModels.trainer.trainer import DynGenModelTrainer
 from DynGenModels.configs.lhco_configs import LHCOlympics_HighLevel_MLP_CondFlowMatch as Configs
 
+
 CUDA = 'cuda:{}'.format(sys.argv[1]) if torch.cuda.is_available() else 'cpu'
 BATCH_SIZE = int(sys.argv[2])
 LR = float(sys.argv[3])
 DIM_HIDDEN = int(sys.argv[4])
-EXCHANGE_TARGET_WITH_SOURCE = bool(int(sys.argv[5]))
-DYNAMICS = sys.argv[6]
-SIGMA = float(sys.argv[7])
-SB1_MIN = float(sys.argv[8])
-SB1_MAX = float(sys.argv[9])
-SB2_MIN = float(sys.argv[10])
-SB2_MAX = float(sys.argv[11])
-NUM_DIJETS = int(sys.argv[12])
+DIM_TIME_EMB = int(sys.argv[5])
+NUM_LAYERS = int(sys.argv[6])
+EXCHANGE_TARGET_WITH_SOURCE = bool(int(sys.argv[7]))
+DYNAMICS = sys.argv[8]
+SIGMA = float(sys.argv[9])
+SB1_MIN = float(sys.argv[10])
+SB1_MAX = float(sys.argv[11])
+SB2_MIN = float(sys.argv[12])
+SB2_MAX = float(sys.argv[13])
+NUM_DIJETS = int(sys.argv[14])
+
 
 configs = Configs(# data:
-                  DATA = 'LHCOlympics',
+                  DATA = 'LHCOlympicsHighLevel',
                   dataset = '../../data/LHCOlympics2020/events_anomalydetection_high_level_cathode.h5', 
                   features = ['mjj', 'mj1', 'delta_m', 'tau21_1', 'tau21_2'],
                   cuts_sideband_low = {'mjj': [SB1_MIN, SB1_MAX]},  
                   cuts_sideband_high = {'mjj': [SB2_MIN, SB2_MAX]}, 
-                  preprocess = ['normalize'],                            
+                  preprocess = ['standardize'],                            
                   num_dijets = NUM_DIJETS,  
                   dim_input = 5,
                   # training params:   
                   DEVICE = CUDA,
                   EPOCHS = 5000,
                   batch_size = BATCH_SIZE,
-                  print_epochs = 20,
-                  early_stopping = 100,
-                  min_epochs = 1500,
+                  print_epochs = 10,
+                  early_stopping = 75,
+                  min_epochs = 500,
                   data_split_fracs = [0.85, 0.15, 0.0],
                   lr = LR,
                   optimizer = 'Adam',
@@ -42,7 +46,9 @@ configs = Configs(# data:
                   DYNAMICS = DYNAMICS,
                   MODEL = 'MLP_backward' if EXCHANGE_TARGET_WITH_SOURCE else 'MLP_forward',
                   dim_hidden = DIM_HIDDEN,
-                  num_layers = 4,
+                  dim_time_emb = DIM_TIME_EMB,
+                  num_layers = NUM_LAYERS,
+                  activation = 'ReLU',
                   sigma = SIGMA,
                   t0 = 0.0,
                   t1 = 1.0,
@@ -95,9 +101,12 @@ pipeline.generate_samples(input_source=lhco.source)
 
 from utils import plot_interpolation
 
-plot_interpolation(lhco, pipeline, figsize=(18, 4.5),
-                    mass_window=[SB1_MAX, SB2_MIN], 
-                    bins=[(SB1_MIN-100, SB2_MAX+100, 40), (0, 1200, 50), (-1250, 1250, 100), (-0.25, 1.25, 0.05), (-0.25, 1.25, 0.05)], 
+mjj_buffer = 100
+
+plot_interpolation(lhco, pipeline, 
+                    figsize=(18, 4.5),
+                    mass_window=[SB1_MAX + mjj_buffer, SB2_MIN - mjj_buffer], 
+                    bins=[(SB1_MIN-100, SB2_MAX+100, 40),  (0, 1200, 20), (-1250, 1250, 40), (0, 1.1, 0.02), (0, 1.1, 0.02)], 
                     log=False, 
                     density=True,
                     save_path=configs.workdir+'/interpolation.png')

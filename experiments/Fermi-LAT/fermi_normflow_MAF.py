@@ -5,13 +5,13 @@ from DynGenModels.configs.fermi_configs import FermiGCE_MAF_RQS_NormFlow as Conf
 
 configs = Configs(# data params:
                  DATA = 'FermiGCE',
-                 dataset = '../../data/fermi/fermi_data_galactic_coord.npy',
+                 dataset = '../../data/fermi/fermi_test2_PS.npy',
                  features = ['theta', 'phi', 'energy'],
                  preprocess = ['normalize', 'logit_transform', 'standardize'],
-                 cuts = {'theta': [5., 25.], 'phi': [5., 25.], 'energy': [2000, 10000]},
+                 cuts = {'theta': [5., 25.], 'phi': [5., 25.], 'energy': [1000, 10000]},
                  data_split_fracs = [0.8, 0.2, 0.0],
                  # training params:
-                 DEVICE = 'cuda:3',
+                 DEVICE = 'cuda:1',
                  EPOCHS = 10000,
                  batch_size = 15000,
                  print_epochs = 20,
@@ -19,7 +19,7 @@ configs = Configs(# data params:
                  min_epochs = 500,
                  lr = 1e-4,
                  optimizer = 'Adam',
-                 fix_seed = None,
+                fix_seed = None,
                  # dynamics params:
                  DYNAMICS = 'NormFlow',
                  permutation = 'reverse',
@@ -78,7 +78,7 @@ results_plots(data=fermi.target,
               comparator='pull',
               model = configs.MODEL, 
               save_path=configs.workdir + '/fermi_features.pdf', 
-              bins=300, 
+              bins=150, 
               features=[r'$\theta$', r'$\phi$', r'$E$ [GeV]'])
 
 results_2D_plots(pipeline.target,

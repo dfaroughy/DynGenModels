@@ -125,7 +125,7 @@ class Scheduler:
         self.configs = configs
 
     def get_scheduler(self, optimizer):
-        if self.configs.scheduler == 'CosineAnnealingLR': return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.configs.scheduler_T_max)
+        if self.configs.scheduler == 'CosineAnnealingLR': return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.configs.scheduler_T_max, eta_min=self.configs.scheduler_eta_min)
         elif self.configs.scheduler == 'StepLR': return torch.optim.lr_scheduler.StepLR(optimizer, step_size=self.configs.scheduler_step_size, gamma=self.configs.scheduler_gamma)
         elif self.configs.scheduler == 'ExponentialLR': return torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.configs.scheduler_gamma)
         elif self.configs.scheduler is None: return NoScheduler(optimizer)

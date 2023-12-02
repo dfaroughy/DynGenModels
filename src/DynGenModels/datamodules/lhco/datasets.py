@@ -1,3 +1,4 @@
+from calendar import c
 import torch
 import h5py
 from torch.utils.data import Dataset
@@ -65,9 +66,7 @@ class LHCOlympicsHighLevelDataset(Dataset):
         sb1 = PreProcessLHCOlympicsHighLevelData(dijets, methods=self.preprocess_methods, summary_stats=self.summary_stats)
         sb1.apply_cuts(cuts=self.cuts_sideband_low)
         if self.exchange_target_with_source: self.target = sb1.features[...,1:][:self.num_dijets].clone()
-        else: 
-            self.source_test = sb1.features[...,1:][self.num_dijets:].clone()
-            self.source = sb1.features[...,1:][:self.num_dijets].clone()
+        else: self.source = sb1.features[...,1:][:self.num_dijets].clone()
         sb1.preprocess()
         if self.exchange_target_with_source: self.target_preprocess = sb1.features[:self.num_dijets].clone()
         else: self.source_preprocess = sb1.features[:self.num_dijets].clone()
@@ -78,9 +77,7 @@ class LHCOlympicsHighLevelDataset(Dataset):
         dijets = torch.Tensor(f['jet features'])
         sb2 = PreProcessLHCOlympicsHighLevelData(dijets,  methods=self.preprocess_methods, summary_stats=self.summary_stats)
         sb2.apply_cuts(cuts=self.cuts_sideband_high)
-        if self.exchange_target_with_source: 
-            self.source = sb2.features[...,1:][:self.num_dijets].clone()
-            self.source_test = sb2.features[...,1:][self.num_dijets:].clone()
+        if self.exchange_target_with_source: self.source = sb2.features[...,1:][:self.num_dijets].clone()
         else: self.target = sb2.features[...,1:][:self.num_dijets].clone()
         sb2.preprocess()
         if self.exchange_target_with_source: self.source_preprocess = sb2.features[:self.num_dijets].clone()
@@ -112,6 +109,14 @@ class LHCOlympicsLowLevelDataset(Dataset):
         self.cuts_sideband_region = {'mjj': [configs.cuts_sideband_low['mjj'][0], configs.cuts_sideband_high['mjj'][1]]}
         self.summary_stats = None
         self.exchange_target_with_source = exchange_target_with_source
+        
+        for f in configs.features:
+            if 'pt' in f: 
+                self.coords='pt_eta_phi_m'
+                break
+            else: self.coords='px_py_pz_e' 
+            
+        print('Using {} coordinates'.format(self.coords))
     
         ''' data attributes:
             (label, mjj, px_j1, py_j1, pz_j1, e_j1, px_j2, py_j2, pz_j2, e_j2)
@@ -144,7 +149,7 @@ class LHCOlympicsLowLevelDataset(Dataset):
     def get_stats(self):
         f = h5py.File(self.dataset, 'r') 
         dijets = torch.Tensor(f['jet features'])
-        sidebands = PreProcessLHCOlympicsLowLevelData(dijets, methods=self.preprocess_methods)
+        sidebands = PreProcessLHCOlympicsLowLevelData(dijets, methods=self.preprocess_methods, coords=self.coords)
         sidebands.apply_cuts(cuts=self.cuts_sideband_region)
         sidebands.apply_cuts(cuts=self.cuts_signal_region, complement=True)
         self.sidebands = sidebands.features[...,2:].clone()
@@ -156,7 +161,7 @@ class LHCOlympicsLowLevelDataset(Dataset):
     def get_source_data(self):
         f = h5py.File(self.dataset, 'r') 
         dijets = torch.Tensor(f['jet features'])
-        sb1 = PreProcessLHCOlympicsLowLevelData(dijets, methods=self.preprocess_methods, summary_stats=self.summary_stats)
+        sb1 = PreProcessLHCOlympicsLowLevelData(dijets, methods=self.preprocess_methods, summary_stats=self.summary_stats, coords=self.coords)
         sb1.apply_cuts(cuts=self.cuts_sideband_low)
         if self.exchange_target_with_source: self.target = sb1.features[...,2:][:self.num_dijets].clone()
         else: 
@@ -170,7 +175,7 @@ class LHCOlympicsLowLevelDataset(Dataset):
     def get_target_data(self):
         f = h5py.File(self.dataset, 'r') 
         dijets = torch.Tensor(f['jet features'])
-        sb2 = PreProcessLHCOlympicsLowLevelData(dijets,  methods=self.preprocess_methods, summary_stats=self.summary_stats)
+        sb2 = PreProcessLHCOlympicsLowLevelData(dijets,  methods=self.preprocess_methods, summary_stats=self.summary_stats, coords=self.coords)
         sb2.apply_cuts(cuts=self.cuts_sideband_high)
         if self.exchange_target_with_source: 
             self.source = sb2.features[...,2:][:self.num_dijets].clone()
@@ -184,7 +189,7 @@ class LHCOlympicsLowLevelDataset(Dataset):
     def get_background_data(self):
         f = h5py.File(self.dataset, 'r') 
         dijets = torch.Tensor(f['jet features'])
-        sr = PreProcessLHCOlympicsLowLevelData(dijets,  methods=self.preprocess_methods, summary_stats=self.summary_stats)
+        sr = PreProcessLHCOlympicsLowLevelData(dijets,  methods=self.preprocess_methods, summary_stats=self.summary_stats, coords=self.coords)
         sr.apply_cuts(cuts=self.cuts_signal_region, background=True)
         self.background = sr.features[...,2:].clone()
         sr.preprocess()
