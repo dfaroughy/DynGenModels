@@ -8,6 +8,7 @@ from DynGenModels.models.utils import get_activation_function, transformer_times
 #...Multi-Layer Perceptron architecture:
 
 
+
 class MLP(nn.Module):
 
     def __init__(self, configs):
@@ -51,6 +52,37 @@ class MLP(nn.Module):
             if isinstance(layer, nn.Linear):
                 nn.init.xavier_uniform_(layer.weight)
 
+
+class MLPClassifier(nn.Module):
+
+    def __init__(self, 
+                 configs):
+        
+        super().__init__()
+        self.device = configs.DEVICE
+        self.define_deep_models(configs)
+        self.init_weights()
+        self.to(self.device)
+
+    def define_deep_models(self, configs):
+        self.dim_input = configs.dim_input
+        self.dim_hidden = configs.dim_hidden 
+        self.num_layers = configs.num_layers
+        self.act_fn = get_activation_function(configs.activation)
+        # layers:
+        layers = [nn.Linear(self.dim_input, self.dim_hidden), self.act_fn]
+        for _ in range(self.num_layers - 2):
+            layers.extend([nn.Linear(self.dim_hidden, self.dim_hidden), self.act_fn])
+        layers.extend([nn.Linear(self.dim_hidden, 1), nn.Sigmoid()])
+        self.model = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.model(x)
+ 
+    def init_weights(self):
+        for layer in self.model:
+            if isinstance(layer, nn.Linear):
+                nn.init.xavier_uniform_(layer.weight)
 
 # class MLP(nn.Module):
 

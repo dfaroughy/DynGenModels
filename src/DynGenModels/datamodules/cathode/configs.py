@@ -6,14 +6,14 @@ from typing import List, Dict
 """
 
 @dataclass
-class Cathode_Classifier_Configs:
+class Cathode_Configs:
     DATA : str = 'Cathode'
-    dataset_ref : str = '../../data/LHCOlympics2020/events_anomalydetection_high_level_cathode.h5'
-    dataset_model : str = '../../data/LHCOlympics2020/events_anomalydetection_high_level_cathode_generated.h5'
+    data_gen_model : str = '../../data/LHCOlympics2020/events_anomalydetection_high_level_cathode.h5'
+    data_reference : str = '../../data/LHCOlympics2020/events_anomalydetection_high_level_cathode_generated.h5'
+    signal_noise_ratio : float = 0.01
+    mass_window : List[float] = field(default_factory = lambda :[3300, 3700])
     features : List[str] = field(default_factory = lambda : ['mj1', 'delta_m', 'tau21_1', 'tau21_2'])
     dim_input : int = 4
-    exchange_target_with_source: bool = False
     preprocess : List[str] = field(default_factory = lambda : ['stadardize'])
-    num_dijets : int = 60000
     def __post_init__(self):
         self.dim_input = len(self.features)

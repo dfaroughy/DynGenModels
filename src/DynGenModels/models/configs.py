@@ -13,6 +13,13 @@ class MLP_Configs(Training_Configs):
     activation : str = 'ReLU'
 
 @dataclass
+class MLP_Classifier_Configs(Training_Configs):
+    MODEL : str = 'MLPClassifier'
+    dim_hidden : int = 64   
+    num_layers : int = 3
+    activation : str = 'ReLU'
+
+@dataclass
 class ResNet_Configs(Training_Configs):
     MODEL : str = 'ResNet'
     dim_hidden : int = 128 
