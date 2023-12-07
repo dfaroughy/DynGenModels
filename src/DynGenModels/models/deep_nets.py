@@ -3,7 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 import numpy as np
 
-from DynGenModels.models.utils import get_activation_function, transformer_timestep_embedding, loretz_scalar_embedding
+from DynGenModels.models.utils import get_activation_function, transformer_timestep_embedding
 
 #...Multi-Layer Perceptron architecture:
 
@@ -53,7 +53,7 @@ class MLP(nn.Module):
                 nn.init.xavier_uniform_(layer.weight)
 
 
-class MLPClassifier(nn.Module):
+class ClassifierNet(nn.Module):
 
     def __init__(self, 
                  configs):

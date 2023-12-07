@@ -203,17 +203,18 @@ class ClassifierTrainer:
         self.writer.close() 
         
     @torch.no_grad()
-    def test(self):
+    def test(self, test_data):
         self.predictions = {}
-        temp = []
+        prob = self.classifier.predict(self.model, test_data[..., 1:])
 
-        for batch in tqdm(self.dataloader.test, desc="testing"):
-            prob = self.classifier.predict(self.model, batch)
-            res = torch.cat([prob, batch['labels']], dim=-1)
-            temp.append(res)
 
-        self.predictions['datasets'] = torch.cat(temp, dim=0) 
-        labels = self.predictions['datasets'][:, -1] 
+        # for batch in tqdm(self.dataloader.test, desc="testing"):
+        #     prob = self.classifier.predict(self.model, batch)
+        #     res = torch.cat([prob, batch['labels truth']], dim=-1)
+        #     temp.append(res)
+
+        self.predictions['datasets'] = torch.cat([prob,  test_data[..., :1]], dim=-1) 
+        labels = self.predictions['datasets'][..., -1] 
 
         for label in [0,1]:
             self.predictions[label] = self.predictions['datasets'][labels == label][:, :-1]
