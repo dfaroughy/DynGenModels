@@ -131,7 +131,7 @@ class DynGenModelTrainer:
         plt.close()
 
 
-
+from DynGenModels.datamodules.cathode.dataprocess import PreProcessCathodeData
 
 class ClassifierTrainer:
 
@@ -204,20 +204,20 @@ class ClassifierTrainer:
         
     @torch.no_grad()
     def test(self, test_data):
+        
+        data = test_data[..., 1:] # remove labels
+        ppc = PreProcessCathodeData(data=data, methods=self.configs.preprocess)
+        ppc.preprocess()
+        data = ppc.features.clone()
+        labels = test_data[...,0].unsqueeze(-1)
+        
         self.predictions = {}
-        prob = self.classifier.predict(self.model, test_data[..., 1:])
-
-
-        # for batch in tqdm(self.dataloader.test, desc="testing"):
-        #     prob = self.classifier.predict(self.model, batch)
-        #     res = torch.cat([prob, batch['labels truth']], dim=-1)
-        #     temp.append(res)
-
-        self.predictions['datasets'] = torch.cat([prob,  test_data[..., :1]], dim=-1) 
-        labels = self.predictions['datasets'][..., -1] 
-
-        for label in [0,1]:
-            self.predictions[label] = self.predictions['datasets'][labels == label][:, :-1]
+        probs = self.classifier.predict(model=self.best_epoch_model, batch=data)
+        self.predictions['datasets'] = torch.cat([labels, probs], dim=-1) 
+        labels = labels.squeeze(-1)
+        
+        for l in [0,1]:
+            self.predictions[l] = self.predictions['datasets'][labels == l][:, -1:]
 
 
     def load(self, path: str=None, model: str=None):

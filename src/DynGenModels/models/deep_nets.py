@@ -61,7 +61,7 @@ class ClassifierNet(nn.Module):
         super().__init__()
         self.device = configs.DEVICE
         self.define_deep_models(configs)
-        self.init_weights()
+        # self.init_weights()
         self.to(self.device)
 
     def define_deep_models(self, configs):
@@ -70,19 +70,24 @@ class ClassifierNet(nn.Module):
         self.num_layers = configs.num_layers
         self.act_fn = get_activation_function(configs.activation)
         # layers:
-        layers = [nn.Linear(self.dim_input, self.dim_hidden), self.act_fn]
-        for _ in range(self.num_layers - 2):
-            layers.extend([nn.Linear(self.dim_hidden, self.dim_hidden), self.act_fn])
-        layers.extend([nn.Linear(self.dim_hidden, 1), nn.Sigmoid()])
+
+        layers = []
+        for _ in range(self.num_layers):
+            layers.append(nn.Linear(self.dim_input, self.dim_hidden))
+            layers.append(self.act_fn)
+            self.dim_input = self.dim_hidden
+
+        layers.append(nn.Linear(self.dim_hidden, 1))
+        layers.append(nn.Sigmoid())
         self.model = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.model(x)
  
-    def init_weights(self):
-        for layer in self.model:
-            if isinstance(layer, nn.Linear):
-                nn.init.xavier_uniform_(layer.weight)
+    # def init_weights(self):
+    #     for layer in self.model:
+    #         if isinstance(layer, nn.Linear):
+    #             nn.init.xavier_uniform_(layer.weight)
 
 # class MLP(nn.Module):
 

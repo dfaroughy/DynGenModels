@@ -7,7 +7,7 @@ class BinaryClassifierTest:
 
     def __init__(self, configs: dataclass):
         self.device = configs.DEVICE
-        self.criterion = nn.BCELoss()
+        self.criterion = nn.BCEWithLogitsLoss()
 
     def loss(self, model, batch):
         features = batch['SR data'].to(self.device)
@@ -19,4 +19,5 @@ class BinaryClassifierTest:
     def predict(self, model, batch):
         features = batch.to(self.device)
         probs = model(features)
+        # probs = F.softmax(logits, dim=1)
         return probs.detach().cpu() 
