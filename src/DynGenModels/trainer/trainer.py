@@ -88,7 +88,7 @@ class DynGenModelTrainer:
             self.model.load_state_dict(torch.load(path/'last_epoch_model.pth'))
             self.last_epoch_model = deepcopy(self.model)
         elif model == 'best':
-            self.model.load_state_dict(torch.load(path/'best_epoch_model.pth'))
+            self.model.load_state_dict(torch.load(path/'best_epoch_model.pth', map_location=(torch.device('cpu') if self.configs.DEVICE=='cpu' else None)))
             self.best_epoch_model = deepcopy(self.model)
         elif model == 'last':
             self.model.load_state_dict(torch.load(path/'last_epoch_model.pth'))
