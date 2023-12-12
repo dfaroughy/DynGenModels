@@ -122,16 +122,3 @@ class CathodeClassifierDataset(Dataset):
         data_test = _data.features.clone()
         self.data_test = torch.concat([label_truth, data_test], dim=-1)
         f.close()
-
-
-
-        # S = self.signal_truth.size(0)
-        # B = self.background_truth.size(0)
-        # idx = torch.randperm(S)[: int(self.snr * B)]
-        # self.signal_truth = self.signal_truth[idx]
-
-        # print('INFO: truth data S={}, B={}, SNR={}'.format(self.signal_truth.shape[0], B, np.round(self.signal_truth.shape[0]/B, 4)))
-        # data = torch.cat([self.signal_truth, self.background_truth], dim=0)
-        # data = data[torch.randperm(data.size(0))]
-        # self.data_ref = torch.concat([torch.zeros(data.size(0), 1), data[..., 2:]], dim=-1)
-        # f.close()

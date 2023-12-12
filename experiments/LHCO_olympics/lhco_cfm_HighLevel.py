@@ -28,7 +28,7 @@ configs = Configs(# data:
                   features = ['mjj', 'mj1', 'delta_m', 'tau21_1', 'tau21_2'],
                   cuts_sideband_low = {'mjj': [SB1_MIN, SB1_MAX]},  
                   cuts_sideband_high = {'mjj': [SB2_MIN, SB2_MAX]}, 
-                  preprocess = ['standardize'],                            
+                  preprocess = ['normalize'],                            
                   num_dijets = NUM_DIJETS,  
                   dim_input = 5,
                   # training params:   
@@ -36,8 +36,8 @@ configs = Configs(# data:
                   EPOCHS = 5000,
                   batch_size = BATCH_SIZE,
                   print_epochs = 10,
-                  early_stopping = 75,
-                  min_epochs = 500,
+                  early_stopping = 100,
+                  min_epochs = 750,
                   data_split_fracs = [0.85, 0.15, 0.0],
                   lr = LR,
                   optimizer = 'Adam',
@@ -95,7 +95,7 @@ pipeline = FlowMatchPipeline(trained_model=cfm,
                              postprocessor=PostProcessLHCOlympicsHighLevelData,
                              best_epoch_model=True)
 
-pipeline.generate_samples(input_source=lhco.source)
+pipeline.generate_samples(input_source=lhco.source_test)
 
 #...plot results:
 
@@ -106,7 +106,7 @@ mjj_buffer = 100
 plot_interpolation(lhco, pipeline, 
                     figsize=(18, 4.5),
                     mass_window=[SB1_MAX + mjj_buffer, SB2_MIN - mjj_buffer], 
-                    bins=[(SB1_MIN-100, SB2_MAX+100, 40),  (0, 1200, 20), (-1250, 1250, 40), (0, 1.1, 0.02), (0, 1.1, 0.02)], 
+                    bins=[(SB1_MIN-100, SB2_MAX+100, 20),  (0, 1200, 18), (0, 1250, 18), (0, 1.1, 0.02), (0, 1.1, 0.02)], 
                     log=False, 
                     density=True,
                     save_path=configs.workdir+'/interpolation.png')

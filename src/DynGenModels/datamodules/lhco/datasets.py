@@ -65,11 +65,17 @@ class LHCOlympicsHighLevelDataset(Dataset):
         dijets = torch.Tensor(f['jet features'])
         sb1 = PreProcessLHCOlympicsHighLevelData(dijets, methods=self.preprocess_methods, summary_stats=self.summary_stats)
         sb1.apply_cuts(cuts=self.cuts_sideband_low)
-        if self.exchange_target_with_source: self.target = sb1.features[...,1:][:self.num_dijets].clone()
-        else: self.source = sb1.features[...,1:][:self.num_dijets].clone()
+        if self.exchange_target_with_source: 
+            self.target = sb1.features[...,1:][:self.num_dijets].clone()
+        else: 
+            self.source = sb1.features[...,1:][:self.num_dijets].clone()
+            self.source_test = sb1.features[...,1:][self.num_dijets:].clone()
         sb1.preprocess()
-        if self.exchange_target_with_source: self.target_preprocess = sb1.features[:self.num_dijets].clone()
-        else: self.source_preprocess = sb1.features[:self.num_dijets].clone()
+        if self.exchange_target_with_source: 
+            self.target_preprocess = sb1.features[:self.num_dijets].clone()
+        else: 
+            self.source_preprocess = sb1.features[:self.num_dijets].clone()
+            self.source_test_preprocess = sb1.features[self.num_dijets:].clone()
         f.close()
 
     def get_target_data(self):

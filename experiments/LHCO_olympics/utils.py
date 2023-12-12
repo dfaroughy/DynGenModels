@@ -90,22 +90,26 @@ def plot_sideband_data(SB1, SR, SB2, subleading_jet=False , features=[r'$p_t$', 
         ax[i].hist(SR[...,i + len(features) * subleading_jet], bins=bins[i], density=density, label='SR', color='gray', alpha=0.3)   
         ax[i].hist(SB2[...,i + len(features) * subleading_jet], bins=bins[i], density=density, label='SB 2', color='darkblue', histtype='step')   
         ax[i].set_xlabel(features[i]+' {}leading jet'.format('sub-' if subleading_jet else ''))
-        ax[i].legend( loc='upper right', fontsize='7')
+        ax[i].legend( loc='lower right', fontsize='6')
     plt.show()
     plt.tight_layout()
     plt.close()
 
 
-def plot_interpolation(lhco, pipeline,  mass_window, figsize=(14,6), 
+def plot_interpolation(lhco, pipeline,  mass_window, preprocess=False, figsize=(14,6), 
                        features=[r'$m_{jj}$', r'$m_{j}$ leading', r'$\Delta m_j$', r'$\tau_{21}$ leading',  r'$\tau_{21}$ sub-leading'],
-                       bins=[(2500, 5000, 30), (0, 1400, 50), (-1250, 1250, 100), (-0.25, 1.25, 0.025), (-0.25, 1.25, 0.025)], 
+                       bins=[(2500, 5000, 30), (0, 1400, 50), (0, 1250, 50), (-0.25, 1.25, 0.025), (-0.25, 1.25, 0.025)], 
                        log=True, density=True, save_path=None):
     
-    x = torch.mean(pipeline.trajectories[...,0], dim=-1) - lhco.background[...,0].mean()
+    background = lhco.background_preprocess if preprocess else lhco.background
+    target = lhco.target_preprocess if preprocess else lhco.target
+    source = lhco.source_preprocess if preprocess else lhco.source
+
+    x = torch.mean(pipeline.trajectories[...,0], dim=-1) - background[...,0].mean()
     idx = torch.argmin(torch.abs(x))
     interpolation = pipeline.trajectories[idx]  
     mask = (interpolation[...,0] > mass_window[0]) & (interpolation[...,0] < mass_window[1])
-    mask_back = (lhco.background[...,0] > mass_window[0]) & (lhco.background[...,0] < mass_window[1])
+    mask_back = (background[...,0] > mass_window[0]) & (background[...,0] < mass_window[1])
 
     fig, axs = plt.subplots(2, 5, figsize=figsize, gridspec_kw={'height_ratios': [5, 1]})
 
@@ -114,19 +118,19 @@ def plot_interpolation(lhco, pipeline,  mass_window, figsize=(14,6),
 
         # Top row: Plotting the histograms
         ax = axs[0, f]
-        ax.hist(lhco.source[...,f], bins=b, histtype='step', color='darkred', label='SB1 (source)', log=log, density=density)
+        ax.hist(source[...,f], bins=b, histtype='step', color='darkred', label='SB1 (source)', log=log, density=density)
         ax.hist(interpolation[mask][...,f], bins=b, histtype='step', color='k', label='t=0.5', log=log, density=density)
         ax.hist(interpolation[...,f], bins=b, histtype='step', color='k', ls=':',  log=log, density=density)
-        ax.hist(lhco.target[...,f], bins=b, histtype='step', color='darkblue',  label='SB2 (target)', log=log, density=density)
-        ax.hist(lhco.background[mask_back][...,f],bins=b, histtype='stepfilled', color='gray', alpha=0.3, label='SR', log=log, density=density)
+        ax.hist(target[...,f], bins=b, histtype='step', color='darkblue',  label='SB2 (target)', log=log, density=density)
+        ax.hist(background[mask_back][...,f],bins=b, histtype='stepfilled', color='gray', alpha=0.3, label='SR', log=log, density=density)
         ax.set_xticklabels([])  # Hide x-axis labels for the top row
-        if f==0: ax.legend(loc='upper right', fontsize=8)
+        if f==1: ax.legend(loc='upper right', fontsize=7)
 
         # Second row: Plotting the ratio of histograms
-        counts_sb1, _ = np.histogram(lhco.source[...,f], bins=b, density=density)
-        counts_sb2, _ = np.histogram(lhco.target[...,f], bins=b, density=density)
+        counts_sb1, _ = np.histogram(source[...,f], bins=b, density=density)
+        counts_sb2, _ = np.histogram(target[...,f], bins=b, density=density)
         counts_interpolation, _ = np.histogram(interpolation[mask][...,f], bins=b, density=density)
-        counts_background, _ = np.histogram(lhco.background[mask_back][...,f], bins=b, density=density)
+        counts_background, _ = np.histogram(background[mask_back][...,f], bins=b, density=density)
 
         ratio_sb1 = np.divide(counts_sb1, counts_background, out=np.zeros_like(counts_sb1), where=counts_background!=0)
         ratio_sb2 = np.divide(counts_sb2, counts_background, out=np.zeros_like(counts_sb2), where=counts_background!=0)

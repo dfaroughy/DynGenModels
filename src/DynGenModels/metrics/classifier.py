@@ -19,5 +19,4 @@ class BinaryClassifierTest:
     def predict(self, model, batch):
         features = batch.to(self.device)
         probs = model(features)
-        # probs = F.softmax(logits, dim=1)
         return probs.detach().cpu() 

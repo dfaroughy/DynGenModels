@@ -19,7 +19,8 @@ class FlowMatchPipeline:
                  atol: float=None,
                  rtol: float=None,
                  reverse_time_flow: bool=False,
-                 best_epoch_model: bool=False
+                 best_epoch_model: bool=False,
+                 batch_size: int=None
                  ):
         
         self.trained_model = trained_model
@@ -38,15 +39,16 @@ class FlowMatchPipeline:
         self.device = configs.DEVICE
         self.augmented = configs.augmented
         self.time_steps = torch.linspace(self.t0, self.t1, self.num_sampling_steps, device=self.device)
-        
+        self.batch_size = configs.batch_size if batch_size is None else batch_size  
+
     @torch.no_grad()
     def generate_samples(self, input_source):
         self.source = self._preprocess(input_source)
         self.trajectories = self._postprocess(self._ODEsolver())  
-        self.target = self.trajectories[-1]
-        self.midway = self.trajectories[self.num_sampling_steps // 2]
-        self.quarter = self.trajectories[self.num_sampling_steps // 4]
-        self.thirdquarter = self.trajectories[3 * self.num_sampling_steps // 4]
+        # self.target = self.trajectories[-1]
+        # self.midway = self.trajectories[self.num_sampling_steps // 2]
+        # self.quarter = self.trajectories[self.num_sampling_steps // 4]
+        # self.thirdquarter = self.trajectories[3 * self.num_sampling_steps // 4]
 
     def _preprocess(self, samples):
         if self.preprocessor is not None:
@@ -78,9 +80,14 @@ class FlowMatchPipeline:
         
         if self.augmented: 
             self.source = torch.cat([self.source, self.source], dim=-1)
-        trajectories = node.trajectory(x=self.source.to(self.device), t_span=self.time_steps)
-        return trajectories.detach().cpu() 
-    
+        num_batches = self.source.shape[0] // self.batch_size
+        if self.source.shape[0] % self.batch_size != 0: num_batches += 1
+        trajectories = []
+        for i in tqdm(range(num_batches)):
+            trajectories.append(node.trajectory(x=self.source[i*self.batch_size:(i+1)*self.batch_size].to(self.device), t_span=self.time_steps).detach().cpu())
+        # trajectories = node.trajectory(x=self.source.to(self.device), t_span=self.time_steps)
+        # return trajectories.detach().cpu() 
+        return torch.cat(trajectories, dim=1)
 
 class NormFlowPipeline:
     
