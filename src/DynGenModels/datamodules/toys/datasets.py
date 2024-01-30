@@ -62,3 +62,45 @@ class Gauss_2_Moons_Dataset(Dataset):
         
         if self.exchange_source_with_target: self.target = torch.stack(data)
         else: self.source = torch.stack(data)
+
+
+
+class Gauss_2_Gauss_Dataset(Dataset):
+
+    def __init__(self, configs: dataclass):
+        
+        self.num_points = configs.num_points
+        self.scale = configs.scale
+
+        ''' datasets:
+            source data (x0) :  N gaussians on unit circle
+            target data (x1) :  2 mooons
+        '''
+
+        self.get_target_data()
+        self.get_source_data()
+
+    def __getitem__(self, idx):
+        output = {}
+        output['target'] = self.target[idx]
+        output['source'] = self.source[idx]
+        output['mask'] = torch.ones_like(self.target[idx][..., 0])
+        output['context'] = torch.empty_like(self.target[idx][..., 0])
+        return output
+
+    def __len__(self):
+        return self.target.size(0)
+    
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def get_target_data(self):
+        X1 = torch.tensor([2., 2.]) + self.scale * torch.randn(self.num_points, 2)
+        Y1 = torch.tensor([2., -2.]) + self.scale * torch.randn(self.num_points, 2)
+        self.target = torch.cat([X1, Y1], dim=0)
+
+    def get_source_data(self):
+        X0 = torch.tensor([-2., 2.]) + self.scale * torch.randn(self.num_points, 2)
+        Y0 = torch.tensor([-2., -2.]) + self.scale * torch.randn(self.num_points, 2)
+        self.source = torch.cat([X0, Y0], dim=0)

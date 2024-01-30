@@ -19,31 +19,36 @@ class MLP(nn.Module):
         self.to(self.device)
 
     def define_deep_models(self, configs):
-        self.dim_input = (1 + int(configs.augmented)) * configs.dim_input
+        self.dim_input = configs.dim_input
         self.dim_output = configs.dim_input
         self.dim_hidden = configs.dim_hidden 
-        self.dim_time_emb = configs.dim_time_emb
+        self.dim_time_emb = configs.dim_time_emb if configs.dim_time_emb is not None else 1
         self.num_layers = configs.num_layers
         self.act_fn = get_activation_function(configs.activation)
 
         layers = [nn.Linear(self.dim_input + self.dim_time_emb, self.dim_hidden)]
 
         for _ in range(self.num_layers - 1): 
-            layers.append(nn.Linear(self.dim_hidden + self.dim_time_emb, self.dim_hidden))
+            layers.append(nn.Linear(self.dim_hidden, self.dim_hidden))
         self.layers = nn.ModuleList(layers)
-        self.output_layer = nn.Linear(self.dim_hidden + self.dim_time_emb, self.dim_output)
+        self.output_layer = nn.Linear(self.dim_hidden, self.dim_output)
 
     def forward(self, t, x, context=None, mask=None):
+        # print('x=', x.shape)
+        # print('t=', t.shape)
+
         x = x.to(self.device)
         time_embeddings = transformer_timestep_embedding(t.squeeze(1), embedding_dim=self.dim_time_emb) if t is not None else t
         time_embeddings = time_embeddings.to(self.device)
-        
-        for layer in self.layers:
-            x = torch.concat([x, time_embeddings], dim=1)
-            x = layer(x)
-            x = self.act_fn(x)
+        # print('temb=', time_embeddings.shape)
 
         x = torch.concat([x, time_embeddings], dim=1)
+
+        # print('xcat=' ,x.shape)
+        
+        for layer in self.layers:
+            x = layer(x)
+            x = self.act_fn(x)
         x = self.output_layer(x)
         return x
 

@@ -24,6 +24,15 @@ class Gauss_2_Moons_Configs:
                                                                         (1.0 / np.sqrt(2), -1.0 / np.sqrt(2)),
                                                                         (-1.0 / np.sqrt(2), 1.0 / np.sqrt(2)),
                                                                         (-1.0 / np.sqrt(2), -1.0 / np.sqrt(2))])
+
+@dataclass
+class Gauss_2_Gauss_Configs:
+    DATA : str = 'Gauss_2_Gauss'
+    features : List[str] = field(default_factory = lambda : ['x', 'y'])
+    dim_input : int = 2
+    num_points : int = 10000
+    scale : float = 0.5
+
 @dataclass
 class Smeared_Gauss_Configs:
     DATA : str = 'Gaussians'
