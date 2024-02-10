@@ -5,13 +5,13 @@ from torch.utils.data import DataLoader, Subset
 from torch.utils.data import Dataset
 from dataclasses import dataclass
 
-class MNIST_Dataloader:
+class MNISTDataloader:
 
-    def __init__(self, datasets: Dataset, configs: dataclass): # type: ignore
+    def __init__(self, datasets: Dataset, config: dataclass): # type: ignore
 
         self.datasets = datasets        
-        self.fracs = configs.data_split_fracs
-        self.batch_size = configs.batch_size
+        self.fracs = config.DATA_SPLIT_FRACS
+        self.batch_size = config.BATCH_SIZE
         self.dataloader()
 
     def train_val_test_split(self, shuffle=False):
