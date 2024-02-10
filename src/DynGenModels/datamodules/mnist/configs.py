@@ -7,8 +7,11 @@ from typing import List, Dict, Tuple
 
 @dataclass
 class MNIST_Configs:
-    DATA_SOURCE = None
-    DATA_TARGET = 'mnist'
-    dim_input = (28, 28)
-    data_split_fracs = [0.9, 0.1, 0]
-    batch_size = 128
+    NAME : str = 'mnist'
+    DATA_SOURCE : str = None
+    DATA_TARGET : str = 'mnist'
+    INPUT_SHAPE : Tuple[float] = field(default_factory = lambda : (1, 28, 28))
+    DIM_INPUT : int = None
+
+    def __post_init__(self):
+        self.DIM_INPUT = np.prod(self.INPUT_SHAPE)

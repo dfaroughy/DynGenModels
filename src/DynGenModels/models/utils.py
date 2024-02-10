@@ -38,11 +38,3 @@ def transformer_timestep_embedding(timesteps, embedding_dim, max_positions=10000
     emb = F.pad(emb, (0, 1), mode='constant')
   assert emb.shape == (timesteps.shape[0], embedding_dim)
   return emb
-
-def loretz_scalar_embedding(x):
-    j1 = x[...,:4]
-    j2 = x[...,4:]
-    p1p1 = (j1[...,0]**2 - j1[...,1]**2 - j1[...,2]**2 - j1[...,3]**2)[:, None]
-    p2p2 = (j2[...,0]**2 - j2[...,1]**2 - j2[...,2]**2 - j2[...,3]**2)[:, None]
-    p1p2 = (j1[...,0]*j2[...,0] - j1[...,1]*j2[...,1] - j1[...,2]*j2[...,2] - j1[...,3]*j2[...,3])[:, None]
-    return torch.cat([x, p1p1, p2p2, p1p2], dim=-1)

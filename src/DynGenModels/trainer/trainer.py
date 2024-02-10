@@ -19,43 +19,43 @@ class DynGenModelTrainer:
     Attributes:
     - dynamics: The model dynamics to train.
     - dataloader: DataLoader providing training and optionally validation data.
-    - configs: Configuration dataclass containing training configurations.
+    - config: Configuration dataclass containing training configurations.
     """
 
     def __init__(self, 
                  dynamics,
                  model,
                  dataloader: DataLoader,
-                 configs: dataclass):
+                 config: dataclass):
     
-        #...configs:
-        self.configs = configs
+        #...config:
+        self.config = config
         self.dynamics = dynamics
         self.model = model
         self.dataloader = dataloader
-        self.workdir = Path(configs.workdir)
-        self.epochs = configs.EPOCHS
-        self.early_stopping = configs.EPOCHS if configs.early_stopping is None else configs.early_stopping
-        self.min_epochs = 0 if configs.min_epochs is None else configs.min_epochs
-        self.print_epochs = 1 if configs.print_epochs is None else configs.print_epochs
-        self.fix_seed = configs.fix_seed
+        self.workdir = Path(config.WORKDIR)
+        self.epochs = config.EPOCHS
+        self.early_stopping = config.EPOCHS if config.EARLY_STOPPING is None else config.EARLY_STOPPING
+        self.min_epochs = 0 if config.MIN_EPOCHS is None else config.MIN_EPOCHS
+        self.print_epochs = 1 if config.PRINT_EPOCHS is None else config.PRINT_EPOCHS
+        self.fix_seed = config.FIX_SEED
 
         #...logger & tensorboard:
         os.makedirs(self.workdir/'tensorboard', exist_ok=True)
         self.writer = SummaryWriter(self.workdir/'tensorboard')  
-        self.logger = Logger(configs, self.workdir/'training.log')
+        self.logger = Logger(config, self.workdir/'training.log')
 
     def train(self):
 
         train = Train_Step()
         valid = Validation_Step()
-        optimizer = Optimizer(self.configs)(self.model.parameters())
-        scheduler = Scheduler(self.configs)(optimizer)
+        optimizer = Optimizer(self.config)(self.model.parameters())
+        scheduler = Scheduler(self.config)(optimizer)
 
         #...logging
 
         self.logger.logfile.info("Training configurations:")
-        for field in fields(self.configs): self.logger.logfile.info(f"{field.name}: {getattr(self.configs, field.name)}")
+        for field in fields(self.config): self.logger.logfile.info(f"{field.name}: {getattr(self.config, field.name)}")
         self.logger.logfile_and_console('number of training parameters: {}'.format(sum(p.numel() for p in self.model.parameters())))
         self.logger.logfile_and_console("start training...")
 
@@ -88,7 +88,7 @@ class DynGenModelTrainer:
             self.model.load_state_dict(torch.load(path/'last_epoch_model.pth'))
             self.last_epoch_model = deepcopy(self.model)
         elif model == 'best':
-            self.model.load_state_dict(torch.load(path/'best_epoch_model.pth', map_location=(torch.device('cpu') if self.configs.DEVICE=='cpu' else None)))
+            self.model.load_state_dict(torch.load(path/'best_epoch_model.pth', map_location=(torch.device('cpu') if self.config.DEVICE=='cpu' else None)))
             self.best_epoch_model = deepcopy(self.model)
         elif model == 'last':
             self.model.load_state_dict(torch.load(path/'last_epoch_model.pth'))

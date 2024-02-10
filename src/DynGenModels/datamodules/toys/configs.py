@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple
 
 @dataclass
 class Gauss_2_Moons_Configs:
-    DATA : str = 'Gauss_2_Moons'
+    NAME : str = 'Gauss_2_Moons'
     features : List[str] = field(default_factory = lambda : ['x', 'y'])
     num_points : int = 10000
     dim_input : int = 2
@@ -27,7 +27,7 @@ class Gauss_2_Moons_Configs:
 
 @dataclass
 class Gauss_2_Gauss_Configs:
-    DATA : str = 'Gauss_2_Gauss'
+    NAME : str = 'Gauss_2_Gauss'
     features : List[str] = field(default_factory = lambda : ['x', 'y'])
     dim_input : int = 2
     num_points : int = 10000
@@ -35,7 +35,7 @@ class Gauss_2_Gauss_Configs:
 
 @dataclass
 class Smeared_Gauss_Configs:
-    DATA : str = 'Gaussians'
+    NAME : str = 'Gaussians'
     features : List[str] = field(default_factory = lambda : ['x', 'y'])
     num_points : int = 10000
     dim_input : int = 2

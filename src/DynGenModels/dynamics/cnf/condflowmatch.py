@@ -5,9 +5,9 @@ from torchcfm.conditional_flow_matching import ConditionalFlowMatcher, ExactOpti
 class CondFlowMatching:
 
 	def __init__(self, config: dataclass):
-		self.sigma_min = config.sigma
-		self.t0 = config.t0
-		self.t1 = config.t1
+		self.sigma_min = config.SIGMA
+		self.t0 = config.T0
+		self.t1 = config.T1
 
 	def z(self, batch):
 		""" conditional variable
@@ -59,9 +59,9 @@ class CondFlowMatching:
 class ConditionalFlowMatching:
 
 	def __init__(self, config: dataclass):
-		self.sigma_min = config.sigma
-		self.t0 = config.t0
-		self.t1 = config.t1
+		self.sigma_min = config.SIGMA
+		self.t0 = config.T0
+		self.t1 = config.T1
 
 	def flowmatcher(self, batch):
 		CFM = ConditionalFlowMatcher(sigma=self.sigma_min)

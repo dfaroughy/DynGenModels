@@ -7,11 +7,10 @@ from typing import List, Dict
 
 @dataclass
 class DataConfigs:
-    DATA : str = 'JetNet'
+    NAME : str = 'JetNet'
     data_dir : str = '../../data/jetnet'
     features : List[str] = field(default_factory = lambda : ['eta_rel', 'phi_rel', 'pt_rel'])
     dim_input : int = 3
-
 
 #...custom configs:
 

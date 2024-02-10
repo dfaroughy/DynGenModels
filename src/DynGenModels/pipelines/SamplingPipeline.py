@@ -29,25 +29,21 @@ class FlowMatchPipeline:
         self.postprocessor = postprocessor
         self.model = self.trained_model.best_epoch_model if best_epoch_model else self.trained_model.last_epoch_model
 
-        self.t0 = configs.t1 if reverse_time_flow else configs.t0
-        self.t1 = configs.t0 if reverse_time_flow else configs.t1
-        self.solver = configs.solver if solver is None else solver
-        self.num_sampling_steps = configs.num_sampling_steps if num_sampling_steps is None else num_sampling_steps
-        self.sensitivity = configs.sensitivity if sensitivity is None else sensitivity
-        self.atol = configs.atol if atol is None else atol
-        self.rtol = configs.rtol if rtol is None else rtol
+        self.t0 = configs.T1 if reverse_time_flow else configs.T0
+        self.t1 = configs.T0 if reverse_time_flow else configs.T1
+        self.solver = configs.SOLVER if solver is None else solver
+        self.num_sampling_steps = configs.NUM_SAMPLING_STEPS if num_sampling_steps is None else num_sampling_steps
+        self.sensitivity = configs.SENSITIVITY if sensitivity is None else sensitivity
+        self.atol = configs.ATOL if atol is None else atol
+        self.rtol = configs.RTOL if rtol is None else rtol
         self.device = configs.DEVICE
         self.time_steps = torch.linspace(self.t0, self.t1, self.num_sampling_steps, device=self.device)
-        self.batch_size = configs.batch_size if batch_size is None else batch_size  
+        self.batch_size = configs.BATCH_SIZE if batch_size is None else batch_size  
 
     @torch.no_grad()
     def generate_samples(self, input_source):
         self.source = self._preprocess(input_source)
         self.trajectories = self._postprocess(self._ODEsolver())  
-        # self.target = self.trajectories[-1]
-        # self.midway = self.trajectories[self.num_sampling_steps // 2]
-        # self.quarter = self.trajectories[self.num_sampling_steps // 4]
-        # self.thirdquarter = self.trajectories[3 * self.num_sampling_steps // 4]
 
     def _preprocess(self, samples):
         if self.preprocessor is not None:

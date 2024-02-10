@@ -20,14 +20,14 @@ def Configs(data: Type[dataclass], model: Type[dataclass], dynamics: Type[datacl
 
     def set_workdir(self, path: str, dir_name: str=None, save_config: bool=True):  # type: ignore
         time = datetime.now().strftime("%Y.%m.%d_%Hh%M")
-        dir_name = '{}.{}.{}.{}'.format(self.DATA, self.DYNAMICS, self.MODEL, time) if dir_name is None else dir_name
-        self.workdir = make_dir(path + '/' + dir_name, overwrite=True)
+        dir_name = '{}.{}.{}.{}'.format(self.NAME, self.DYNAMICS, self.MODEL, time) if dir_name is None else dir_name
+        self.WORKDIR = make_dir(path + '/' + dir_name, overwrite=True)
         if save_config: self.save()
 
     def save(self, path: str=None): # type: ignore
         config = asdict(self)
         print_table(config)
-        path = self.workdir + '/config.json' if path is None else path
+        path = self.WORKDIR + '/config.json' if path is None else path
         with open(path, 'w') as f: 
             json.dump(config, f, indent=4)
 
