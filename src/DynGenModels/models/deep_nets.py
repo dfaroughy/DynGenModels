@@ -34,18 +34,11 @@ class MLP(nn.Module):
         self.output_layer = nn.Linear(self.dim_hidden, self.dim_output)
 
     def forward(self, t, x, context=None, mask=None):
-        # print('x=', x.shape)
-        # print('t=', t.shape)
-
         x = x.to(self.device)
         time_embeddings = transformer_timestep_embedding(t.squeeze(1), embedding_dim=self.dim_time_emb) if t is not None else t
         time_embeddings = time_embeddings.to(self.device)
-        # print('temb=', time_embeddings.shape)
+        x = torch.concat([x, time_embeddings], dim=1)  
 
-        x = torch.concat([x, time_embeddings], dim=1)
-
-        # print('xcat=' ,x.shape)
-        
         for layer in self.layers:
             x = layer(x)
             x = self.act_fn(x)
@@ -56,38 +49,6 @@ class MLP(nn.Module):
         for layer in self.layers + [self.output_layer]:
             if isinstance(layer, nn.Linear):
                 nn.init.xavier_uniform_(layer.weight)
-
-
-class ClassifierNet(nn.Module):
-
-    def __init__(self, 
-                 configs):
-        
-        super().__init__()
-        self.device = configs.DEVICE
-        self.define_deep_models(configs)
-        # self.init_weights()
-        self.to(self.device)
-
-    def define_deep_models(self, configs):
-        self.dim_input = configs.dim_input
-        self.dim_hidden = configs.dim_hidden 
-        self.num_layers = configs.num_layers
-        self.act_fn = get_activation_function(configs.activation)
-        # layers:
-
-        layers = []
-        for _ in range(self.num_layers):
-            layers.append(nn.Linear(self.dim_input, self.dim_hidden))
-            layers.append(self.act_fn)
-            self.dim_input = self.dim_hidden
-
-        layers.append(nn.Linear(self.dim_hidden, 1))
-        layers.append(nn.Sigmoid())
-        self.model = nn.Sequential(*layers)
-
-    def forward(self, x):
-        return self.model(x)
     
 #...ResNet architecture:
 
