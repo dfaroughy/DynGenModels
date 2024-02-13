@@ -3,13 +3,13 @@ from torchdyn.core import NeuralODE
 from tqdm.auto import tqdm
 from dataclasses import dataclass
 
-from DynGenModels.trainer.trainer import DynGenModelTrainer
+from DynGenModels.models.dynamical_model import Model
 from DynGenModels.pipelines.utils import TorchdynWrapper
 
 class FlowMatchPipeline:
     
     def __init__(self, 
-                 trained_model: DynGenModelTrainer=None, 
+                 trained_model: Model=None, 
                  preprocessor: object=None,
                  postprocessor: object=None,
                  configs: dataclass=None,
@@ -85,7 +85,7 @@ class FlowMatchPipeline:
 class NormFlowPipeline:
     
     def __init__(self,
-                 trained_model: DynGenModelTrainer=None, 
+                 trained_model: Model=None, 
                  preprocessor: object=None,
                  postprocessor: object=None,
                  best_epoch_model: bool=False
