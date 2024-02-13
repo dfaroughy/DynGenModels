@@ -1,6 +1,5 @@
 import torch
 from dataclasses import dataclass
-import logging
 
 class TorchdynWrapper(torch.nn.Module):
     """ Wraps model to torchdyn compatible format.

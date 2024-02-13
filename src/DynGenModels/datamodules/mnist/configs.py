@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple
 """
 
 @dataclass
-class MNIST_Configs:
+class MNIST_Config:
     NAME : str = 'mnist'
     DATA_SOURCE : str = None
     DATA_TARGET : str = 'mnist'

@@ -9,9 +9,9 @@ from dataclasses import dataclass, fields
 from copy import deepcopy
 import os
 
-from DynGenModels.trainer.utils import Train_Step, Validation_Step, Optimizer, Scheduler, Logger
+from DynGenModels.models.utils import Train_Step, Validation_Step, Optimizer, Scheduler, Logger
 
-class DynGenModelTrainer:
+class Model:
 
     """
     Trainer for dynamic generative models.

@@ -1,7 +1,7 @@
 
 from DynGenModels.dynamics.nf.normflows import NormalizingFlow
 from DynGenModels.models.nflow_nets import CouplingsPiecewiseRQS 
-from DynGenModels.configs.fermi_configs import FermiGCE_Couplings_RQS_NormFlow as Configs
+from DynGenModels.configs.register_config_fermi import FermiGCE_Couplings_RQS_NormFlow as Configs
 
 configs = Configs(# data params:
                  DATA = 'FermiGCE',

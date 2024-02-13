@@ -6,7 +6,7 @@ from typing import List, Dict
 """
 
 @dataclass
-class DataConfigs:
+class DataConfig:
     NAME : str = 'JetNet'
     data_dir : str = '../../data/jetnet'
     features : List[str] = field(default_factory = lambda : ['eta_rel', 'phi_rel', 'pt_rel'])
@@ -15,7 +15,7 @@ class DataConfigs:
 #...custom configs:
 
 @dataclass
-class JetNet_Configs(DataConfigs):
+class JetNet_Config(DataConfig):
     num_particles : int = 30
     jet_types : List[str] = field(default_factory = lambda : ['g', 'q', 't', 'w', 'z'])
     cuts : Dict[str, int] = field(default_factory = lambda : {'num_constituents': None})

@@ -1,6 +1,6 @@
 import torch
 from DynGenModels.trainer.trainer import DynGenModelTrainer
-from DynGenModels.configs.fermi_configs import FermiGCE_MLP_FlowMatch as Configs
+from DynGenModels.configs.register_config_fermi import FermiGCE_MLP_FlowMatch as Configs
 
 configs = Configs(# data params:
                   DATA = 'FermiGCE',

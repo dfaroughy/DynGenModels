@@ -1,18 +1,20 @@
 
-from DynGenModels.configs.utils import Register_Experiment
-from DynGenModels.datamodules.toys.configs import Gauss_2_Moons_Configs, Gauss_2_Gauss_Configs
-from DynGenModels.models.configs import MLP_Configs
-from DynGenModels.dynamics.cnf.configs import FlowMatch_Configs
-from DynGenModels.pipelines.configs import  NeuralODE_Sampler_Configs
+from DynGenModels.configs.utils import Load_Experiment_Config
 
-#...Gauss 2 Moons Model Configs:
+# Register Toy experiments configs:
 
-Gauss_2_Moons_MLP_FlowMatch = Register_Experiment(data = Gauss_2_Moons_Configs,
-                                                model = MLP_Configs, 
-                                                dynamics = FlowMatch_Configs, 
-                                                pipeline = NeuralODE_Sampler_Configs)
+from DynGenModels.datamodules.toys.configs import Gauss_2_Moons_Config, Gauss_2_Gauss_Config
+from DynGenModels.models.architectures.configs import MLP_Config
+from DynGenModels.dynamics.cnf.configs import FlowMatch_Config
+from DynGenModels.pipelines.configs import  NeuralODE_Sampler_Config
 
-Gauss_2_Gauss_MLP_FlowMatch = Register_Experiment(data = Gauss_2_Gauss_Configs,
-                                                model = MLP_Configs, 
-                                                dynamics = FlowMatch_Configs, 
-                                                pipeline = NeuralODE_Sampler_Configs)
+
+Config_Gauss_2_Moons_MLP_FlowMatch = Load_Experiment_Config(data = Gauss_2_Moons_Config,
+                                                            model = MLP_Config, 
+                                                            dynamics = FlowMatch_Config, 
+                                                            pipeline = NeuralODE_Sampler_Config)
+
+Config_Gauss_2_Gauss_MLP_FlowMatch = Load_Experiment_Config(data = Gauss_2_Gauss_Config,
+                                                            model = MLP_Config, 
+                                                            dynamics = FlowMatch_Config, 
+                                                            pipeline = NeuralODE_Sampler_Config)

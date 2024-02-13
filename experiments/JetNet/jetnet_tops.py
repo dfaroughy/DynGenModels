@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
 from DynGenModels.trainer.trainer import DynGenModelTrainer
-from DynGenModels.configs.jetnet_configs import JetNet_EPiC_CondFlowMatch as Configs
+from DynGenModels.configs.register_config_jetnet import JetNet_EPiC_CondFlowMatch as Configs
 
 configs = Configs(data_dir = '../../data/jetnet',
                   features = ['eta_rel', 'phi_rel', 'pt_rel'],

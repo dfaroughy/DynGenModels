@@ -4,7 +4,7 @@ from typing import Type
 from dataclasses import dataclass, asdict, make_dataclass, field, fields, MISSING
 from DynGenModels.utils.utils import make_dir, print_table
 
-def Register_Experiment(data: Type[dataclass], model: Type[dataclass], dynamics: Type[dataclass], pipeline: Type[dataclass]=None):  # type: ignore
+def Load_Experiment_Config(data: Type[dataclass], model: Type[dataclass], dynamics: Type[dataclass], pipeline: Type[dataclass]=None):  # type: ignore
     
     combined_fields = []
     all_dataclasses = [data, model, dynamics] 

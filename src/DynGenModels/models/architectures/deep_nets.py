@@ -3,7 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 import numpy as np
 
-from DynGenModels.models.utils import get_activation_function, transformer_timestep_embedding
+from DynGenModels.models.architectures.utils import get_activation_function, transformer_timestep_embedding
 
 #...Multi-Layer Perceptron architecture:
 
