@@ -15,6 +15,9 @@ class Unet(nn.Module):
         self.to(self.device)
 
     def forward(self, t, x, context=None, mask=None):
+        x = x.to(self.device)
+        t = t.to(self.device)
+        if context is not None: context = context.to(self.device)
         x = self.unet(t, x, y=context)
         return x
     
@@ -27,6 +30,7 @@ class UNetLight(nn.Module):
         self.input_shape = config.INPUT_SHAPE
         self.dim_time_emb = config.DIM_TIME_EMB
         self.dim_hidden = config.DIM_HIDDEN
+        self.device = config.DEVICE
         # self.act_fn = get_activation_function(config.ACTIVATION)
         self.Encoder()
         self.TimeEmbedding()
@@ -57,6 +61,12 @@ class UNetLight(nn.Module):
                                  nn.Conv2d(self.dim_hidden, 1, kernel_size=3, stride=1, padding=1)
                                  )
     def forward(self, t, x, context=None, mask=None):
+
+        x = x.to(self.device)
+        t = t.to(self.device)
+        if context is not None: context = context.to(self.device)
+        if mask is not None: mask = mask.to(self.device)
+
         x = self.init_conv(x)
         
         # encode:
