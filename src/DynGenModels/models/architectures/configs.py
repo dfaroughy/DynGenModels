@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from DynGenModels.models.configs import Training_Configs
+from DynGenModels.models.configs import Training_Config
 
 """ Default configurations for models.
 """
 
 @dataclass
-class MLP_Config(Training_Configs):
+class MLP_Config(Training_Config):
     MODEL : str = 'MLP'
     DIM_HIDDEN : int = 128   
     dim_time_emb : int = None
@@ -13,27 +13,27 @@ class MLP_Config(Training_Configs):
     activation : str = 'ReLU'
 
 @dataclass
-class ResNet_Config(Training_Configs):
+class ResNet_Config(Training_Config):
     MODEL : str = 'ResNet'
     DIM_HIDDEN  : int = 128 
     NUM_BLOCKS : int = 3
     NUM_BLOCK_LAYERS : int = 2
 
 @dataclass
-class UNet_Config(Training_Configs):
+class UNet_Config(Training_Config):
     MODEL : str = 'Unet'
     DIM_HIDDEN : int = 32 # divisible by 32
     NUM_RES_BLOCKS : int = 1
 
 @dataclass
-class UNetLight_Config(Training_Configs):
+class UNetLight_Config(Training_Config):
     MODEL : str = 'UnetLight'
     DIM_HIDDEN : int = 64 # divisible by 8
     DIM_TIME_EMB : int = 64
     ACTIVATION : str = 'GELU'
 
 @dataclass
-class DeepSets_Config(Training_Configs):
+class DeepSets_Config(Training_Config):
     MODEL : str = 'DeepSets'
     DIM_HIDDEN : int = 128   
     NUM_LAYERS_1 : int = 3
@@ -41,7 +41,7 @@ class DeepSets_Config(Training_Configs):
     POOLING : str = 'meansum'
 
 @dataclass
-class EPiC_Config(Training_Configs):
+class EPiC_Config(Training_Config):
     MODEL : str = 'EPiC'
     POOLING: str = 'mean_sum'
     DIM_HIDDEN  : int = 128
@@ -51,7 +51,7 @@ class EPiC_Config(Training_Configs):
 #...Normalizing Flow Models:
 
 @dataclass
-class MAF_Affine_Config(Training_Configs):
+class MAF_Affine_Config(Training_Config):
     MODEL : str = 'MAF_Affine'
     dim_hidden : int = 128 
     num_blocks : int = 2 
@@ -60,7 +60,7 @@ class MAF_Affine_Config(Training_Configs):
     use_batch_norm : bool = False
 
 @dataclass
-class Couplings_Affine_Config(Training_Configs):
+class Couplings_Affine_Config(Training_Config):
     MODEL : str = 'Couplings_Affine'
     dim_hidden : int = 128 
     num_blocks : int = 2 
@@ -69,7 +69,7 @@ class Couplings_Affine_Config(Training_Configs):
     use_batch_norm : bool = False
 
 @dataclass
-class MAF_RQS_Config(Training_Configs):
+class MAF_RQS_Config(Training_Config):
     MODEL : str = 'MAF_RQS'
     dim_hidden : int = 128 
     num_blocks : int = 2 
@@ -81,7 +81,7 @@ class MAF_RQS_Config(Training_Configs):
     tail_bound : int = 5
 
 @dataclass
-class Couplings_RQS_Config(Training_Configs):
+class Couplings_RQS_Config(Training_Config):
     MODEL : str = 'Couplings_RQS'
     mask : str = 'checkerboard'
     dim_hidden : int = 128 

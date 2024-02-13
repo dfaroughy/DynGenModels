@@ -4,7 +4,7 @@ import sys
 
 
 from DynGenModels.trainer.trainer import DynGenModelTrainer
-from DynGenModels.configs.toys_configs import Gauss_2_Moons_MLP_FlowMatch as Configs
+from DynGenModels.configs.register_config_toys import Gauss_2_Moons_MLP_FlowMatch as Configs
 
 
 
