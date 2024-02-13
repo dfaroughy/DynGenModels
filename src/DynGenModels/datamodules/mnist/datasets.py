@@ -75,4 +75,5 @@ class MNISTDataset(Dataset):
 
         self.source = [d[0] for d in self.data_0] if self.config.DATA_SOURCE is not None else [torch.rand_like(d[0]) for d in self.data_0]
         self.source_label = [d[1] for d in self.data_0] if self.config.DATA_SOURCE is not None else [0] * len(self.data_0)
-
+        self.source = self.source[:len(self.target)]
+        self.source_label = self.source_label[:len(self.target)]
