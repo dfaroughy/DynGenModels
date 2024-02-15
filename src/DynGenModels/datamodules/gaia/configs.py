@@ -7,12 +7,12 @@ from typing import List, Dict
 
 @dataclass
 class Gaia_Config:
-    NAME : str = 'Gaia'
-    dataset : List[str] = field(default_factory = lambda : ['../../data/gaia/data.angle_340.smeared_00.npy',
+    DATASET : str = 'gaia'
+    DATA_DIR : List[str] = field(default_factory = lambda : ['../../data/gaia/data.angle_340.smeared_00.npy',
                                                             '../../data/gaia/data.angle_340.smeared_00.cov.npy'])
-    features : List[str] = field(default_factory = lambda : ['x', 'y', 'z', 'vx', 'vy', 'vz'])
-    dim_input : int = 6
-    r_sun : List[float] = field(default_factory = lambda :[8.122, 0.0, 0.0208])
-    preprocess : List[str] = field(default_factory = lambda : ['unit_ball_transform', 'radial_blowup', 'standardize' ])
-    cuts : Dict[str, List[float]] = field(default_factory = lambda: {'r': [0.0, 3.5]} )
+    FEATURES : List[str] = field(default_factory = lambda : ['x', 'y', 'z', 'vx', 'vy', 'vz'])
+    DIM_INPUT : int = 6
+    R_SUN : List[float] = field(default_factory = lambda :[8.122, 0.0, 0.0208])
+    PREPROCESS : List[str] = field(default_factory = lambda : ['unit_ball_transform', 'radial_blowup', 'standardize' ])
+    CUTS : Dict[str, List[float]] = field(default_factory = lambda: {'r': [0.0, 3.5]} )
     

@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple
 
 @dataclass
 class MNIST_Config:
-    NAME : str = 'mnist'
+    DATASET : str = 'mnist'
     DATA_SOURCE : str = None
     DATA_TARGET : str = 'mnist'
     DIM_INPUT : int = 784

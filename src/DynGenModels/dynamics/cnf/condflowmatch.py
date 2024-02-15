@@ -74,8 +74,10 @@ class ConditionalFlowMatching:
 		""" conditional flow-mathcing/score-matching MSE loss
 		"""
 		self.flowmatcher(batch)
+		# print(1, self.path.shape, self.t.shape, batch['mask'].shape)
 		v = model(x=self.path, t=self.t, mask=batch['mask'])
 		u = self.u.to(v.device)
+		# print(2, v.shape, u.shape)
 		loss = torch.square(v - u)
 		return torch.mean(loss)
 

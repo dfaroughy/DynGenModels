@@ -9,8 +9,8 @@ class NeuralODE_Sampler_Config:
     SOLVER : str = 'euler'
     NUM_SAMPLING_STEPS : int = 100
     SENSITIVITY : str = 'adjoint'
-    ATOL : float = 1e-4
-    RTOL : float = 1e-4
+    ATOL : float = None
+    RTOL : float = None
     NUM_GEN_SAMPLES: int = 10000 
 
 @dataclass

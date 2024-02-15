@@ -35,10 +35,10 @@ class UNetLight_Config(Training_Config):
 @dataclass
 class DeepSets_Config(Training_Config):
     MODEL : str = 'DeepSets'
+    POOLING : str = 'mean_sum'
     DIM_HIDDEN : int = 128   
     NUM_LAYERS_1 : int = 3
     NUM_LAYERS_2 : int = 3
-    POOLING : str = 'meansum'
 
 @dataclass
 class EPiC_Config(Training_Config):

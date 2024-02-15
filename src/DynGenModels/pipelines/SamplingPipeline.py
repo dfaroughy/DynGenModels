@@ -67,6 +67,9 @@ class FlowMatchPipeline:
     def _ODEsolver(self):
         print('INFO: neural ODE solver with {} method and steps={}'.format(self.solver, self.num_sampling_steps))
 
+        if self.solver == 'dopri5':
+            assert self.atol is not None and self.rtol is not None, 'atol and rtol must be specified for the chosen solver'
+
         node = NeuralODE(vector_field=TorchdynWrapper(self.model), 
                         solver=self.solver, 
                         sensitivity=self.sensitivity, 

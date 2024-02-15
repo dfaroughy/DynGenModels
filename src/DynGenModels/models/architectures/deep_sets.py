@@ -9,19 +9,18 @@ import torch.nn.utils.weight_norm as weight_norm
 class DeepSets(nn.Module):
     ''' Wrapper class for the DeepSets architecture
     '''
-    def __init__(self, configs):
+    def __init__(self, config):
         super(DeepSets, self).__init__()
-        self.device = configs.DEVICE
-        self.deepsets = _DeepSets(dim=config.dim_input, 
-                                  dim_hidden=config.dim_hidden, 
-                                  num_layers_1=config.num_layers_1,
-                                  num_layers_2=config.num_layers_2,
-                                  pool=config.poolings,
+        self.device = config.DEVICE
+        self.deepsets = _DeepSets(dim=config.DIM_INPUT, 
+                                  dim_hidden=config.DIM_HIDDEN, 
+                                  num_layers_1=config.NUM_LAYERS_1,
+                                  num_layers_2=config.NUM_LAYERS_2,
+                                  pool=config.POOLING,
                                   time_varying=True)
                         
     def forward(self, t, x, mask):
-        t = t.repeat(1, x.shape[1], 1)
-        print(1, x.shape, t.shape)
+        t = t.unsqueeze(1).repeat(1, x.shape[1], 1)
         x = torch.cat([x, t], dim=-1)
         x = x.to(self.device)
         mask = mask.to(self.device) if mask is not None else None
@@ -43,27 +42,32 @@ class _DeepSets(torch.nn.Module):
         
         self.pool = pool
         self.time_varying = time_varying
-        s = 2 if pool == 'meansum' else 1      
+        s = 2 if pool == 'mean_sum' else 1      
     
         phi_layers = [torch.nn.Linear(dim + (1 if time_varying else 0), dim_hidden), torch.nn.SELU()]
-        for _ in range(num_layers_1-1): phi_layers.extend([torch.nn.Linear(dim_hidden, dim_hidden), torch.nn.SELU()])
+        for _ in range(num_layers_1-1): 
+            phi_layers.extend([torch.nn.Linear(dim_hidden, dim_hidden), torch.nn.SELU()])
         phi_layers.append(torch.nn.Linear(dim_hidden, dim_hidden))
         self.phi = torch.nn.Sequential(*phi_layers)
 
         rho_layers = [torch.nn.Linear(s * dim_hidden, dim_hidden), torch.nn.SELU()]
-        for _ in range(num_layers_2-1): rho_layers.extend([torch.nn.Linear(dim_hidden, dim_hidden), torch.nn.SELU()])
+        for _ in range(num_layers_2-1): 
+            rho_layers.extend([torch.nn.Linear(dim_hidden, dim_hidden), torch.nn.SELU()])
         rho_layers.append(torch.nn.Linear(dim_hidden, dim))
         self.rho = torch.nn.Sequential(*rho_layers)
 
     def forward(self, x, mask):
-        mask = mask.unsqueeze(-1) if mask is not None else torch.ones_like(x[..., 0]).unsqueeze(-1)
         h = self.phi(x)
         h_sum = (h * mask).sum(1, keepdim=False)   
         h_mean = h_sum / mask.sum(1, keepdim=False)  
+        print(1, h_sum.shape, h_mean.shape)
         if self.pool == 'sum': h_pool = h_sum  
         elif self.pool == 'mean': h_pool = h_mean 
-        elif self.pool == 'meansum': h_pool = torch.cat([h_mean, h_sum], dim=1) 
-        return self.rho(h_pool)                        
+        elif self.pool == 'mean_sum': h_pool = torch.cat([h_mean, h_sum], dim=1) 
+        print(2, h_pool.shape)
+        f = self.rho(h_pool)
+        print(3, f.shape)
+        return f                        
     
 
 
@@ -72,24 +76,24 @@ class _DeepSets(torch.nn.Module):
 class EPiC(nn.Module):
     ''' Wrapper class for the EPiC architecture
     '''
-    def __init__(self, configs):
+    def __init__(self, config):
         super(EPiC, self).__init__()
-        self.device = configs.DEVICE
+        self.device = config.DEVICE
 
-        if configs.pooling=='mean_sum':
-            self.epic = EPiC_Network(feats = configs.dim_input, 
-                                    latent_global = configs.dim_global,
-                                    latent_local = configs.dim_input,
-                                    hid_d = configs.dim_hidden, 
-                                    equiv_layers = configs.num_epic_layers,
+        if config.POOLING=='mean_sum':
+            self.epic = EPiC_Network(feats = config.DIM_INPUT, 
+                                    latent_global = config.DIM_GLOBAL,
+                                    latent_local = config.DIM_INPUT,
+                                    hid_d = config.DIM_HIDDEN, 
+                                    equiv_layers = config.NUM_EPIC_LAYERS,
                                     time_varying=True)
             
-        elif configs.pooling=='attention':
-            self.epic = EPiC_Attention_Network(feats = configs.dim_input,
-                                               latent_global = configs.dim_global,
-                                               latent_local = configs.dim_input,
-                                               hid_d = configs.dim_hidden, 
-                                               equiv_layers = configs.num_epic_layers,
+        elif config.POOLING=='attention':
+            self.epic = EPiC_Attention_Network(feats = config.DIM_INPUT,
+                                               latent_global = config.DIM_GLOBAL,
+                                               latent_local = config.DIM_INPUT,
+                                               hid_d = config.DIM_HIDDEN, 
+                                               equiv_layers = config.NUM_EPIC_LAYERS,
                                                time_varying=True)
                         
     def forward(self, t, x, mask=None, sampling=False):
@@ -97,6 +101,7 @@ class EPiC(nn.Module):
         x = torch.cat([x, t], dim=-1)
         x = x.to(self.device)
         mask = mask[..., None].to(self.device) if mask is not None else torch.ones_like(t).to(self.device)
+        print(2, x.shape, t.shape)
         self.epic = self.epic.to(self.device)
         return self.epic.forward(x, mask)
 
