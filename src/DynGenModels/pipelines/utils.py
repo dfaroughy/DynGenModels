@@ -9,5 +9,6 @@ class TorchdynWrapper(torch.nn.Module):
         self.nn = net
         self.mask = mask
     def forward(self, t, x):
-        t = t.repeat(x.shape[:-1]+(1,), 1)
+        # t = t.repeat(x.shape[:-1]+(1,), 1)
+        t = t.repeat(x.shape[0])[:, None]
         return self.nn(t=t, x=x, mask=self.mask)
