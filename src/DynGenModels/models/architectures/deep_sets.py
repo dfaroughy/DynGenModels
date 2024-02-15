@@ -69,21 +69,6 @@ class _DeepSets(torch.nn.Module):
         return f
 
 
-    # def forward(elf, x, mask):
-    #     h = self.phi(x)
-    #     h_sum = (h * mask).sum(1, keepdim=False)   
-    #     h_mean = h_sum / mask.sum(1, keepdim=False)  
-    #     print(1, h_sum.shape, h_mean.shape)
-    #     if self.pool == 'sum': h_pool = h_sum  
-    #     elif self.pool == 'mean': h_pool = h_mean 
-    #     elif self.pool == 'mean_sum': h_pool = torch.cat([h_mean, h_sum], dim=1) 
-    #     print(2, h_pool.shape)
-    #     f = self.rho(h_pool)
-    #     print(3, f.shape)
-    #     return f                        
-    
-
-
 #...EPiC Network:
 
 class EPiC(nn.Module):
