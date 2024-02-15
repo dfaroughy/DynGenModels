@@ -42,7 +42,7 @@ class _DeepSets(torch.nn.Module):
         
         self.pool = pool
         self.time_varying = time_varying
-        s = 2 if pool == 'mean_sum' else 1      
+        s = 3 if pool == 'mean_sum' else 2     
     
         phi_layers = [torch.nn.Linear(dim + (1 if time_varying else 0), dim_hidden), torch.nn.SELU()]
         for _ in range(num_layers_1-1): 
@@ -57,17 +57,30 @@ class _DeepSets(torch.nn.Module):
         self.rho = torch.nn.Sequential(*rho_layers)
 
     def forward(self, x, mask):
-        h = self.phi(x)
+        h = self.phi(x)  # Apply phi to each point's features
         h_sum = (h * mask).sum(1, keepdim=False)   
-        h_mean = h_sum / mask.sum(1, keepdim=False)  
-        print(1, h_sum.shape, h_mean.shape)
-        if self.pool == 'sum': h_pool = h_sum  
-        elif self.pool == 'mean': h_pool = h_mean 
-        elif self.pool == 'mean_sum': h_pool = torch.cat([h_mean, h_sum], dim=1) 
-        print(2, h_pool.shape)
-        f = self.rho(h_pool)
-        print(3, f.shape)
-        return f                        
+        h_mean = h_sum / mask.sum(1, keepdim=False) 
+        if self.pool == 'sum':  h_pool = h_sum  
+        elif self.pool == 'mean':  h_pool = h_mean 
+        elif self.pool == 'mean_sum': h_pool = torch.cat([h_mean, h_sum], dim=1)
+        h_pool_repeated = h_pool.unsqueeze(1).repeat(1, x.shape[1], 1)
+        enhanced_features = torch.cat([h, h_pool_repeated], dim=-1)
+        f = self.rho(enhanced_features)
+        return f
+
+
+    # def forward(elf, x, mask):
+    #     h = self.phi(x)
+    #     h_sum = (h * mask).sum(1, keepdim=False)   
+    #     h_mean = h_sum / mask.sum(1, keepdim=False)  
+    #     print(1, h_sum.shape, h_mean.shape)
+    #     if self.pool == 'sum': h_pool = h_sum  
+    #     elif self.pool == 'mean': h_pool = h_mean 
+    #     elif self.pool == 'mean_sum': h_pool = torch.cat([h_mean, h_sum], dim=1) 
+    #     print(2, h_pool.shape)
+    #     f = self.rho(h_pool)
+    #     print(3, f.shape)
+    #     return f                        
     
 
 
