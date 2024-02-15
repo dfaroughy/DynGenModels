@@ -42,7 +42,7 @@ class PreProcessJetClassData:
         self.features = self.features * (1 - 2 * alpha) + alpha
         self.features = torch.log(self.features / (1 - self.features))
 
-class PostProcessFermiData:
+class PostProcessJetClassData:
 
     def __init__(self, 
                  data, 
