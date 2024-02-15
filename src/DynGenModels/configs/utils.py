@@ -24,9 +24,9 @@ def Load_Experiment_Config(data: Type[dataclass], model: Type[dataclass], dynami
         self.WORKDIR = make_dir(path + '/' + dir_name, overwrite=True)
         if save_config: self.save()
 
-    def save(self, path: str=None): # type: ignore
+    def save(self, path: str=None, print: bool=True): # type: ignore
         config = asdict(self)
-        print_table(config)
+        if print: print_table(config)
         path = self.WORKDIR + '/config.json' if path is None else path
         with open(path, 'w') as f: 
             json.dump(config, f, indent=4)
