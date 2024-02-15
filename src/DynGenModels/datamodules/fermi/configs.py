@@ -7,6 +7,7 @@ from typing import List, Dict
 
 @dataclass
 class FermiGCE_Config:
+    NAME : str = None
     DATASET : str = 'fermi'
     DATADIR : str = '../../data/fermi/fermi_data_galactic_coord.npy'
     FEATURES : List[str] = field(default_factory = lambda : ['theta', 'phi', 'energy'])

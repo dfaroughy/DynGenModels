@@ -7,6 +7,7 @@ from typing import List, Dict
 
 @dataclass
 class DataConfig:
+    NAME : str = None
     DATASET: str = 'jetnet'
     DATA_DIR : str = '../../data/jetnet'
     FEATURES : List[str] = field(default_factory = lambda : ['eta_rel', 'phi_rel', 'pt_rel'])

@@ -7,6 +7,7 @@ from typing import List, Dict
 
 @dataclass
 class Gaia_Config:
+    NAME : str = None
     DATASET : str = 'gaia'
     DATA_DIR : List[str] = field(default_factory = lambda : ['../../data/gaia/data.angle_340.smeared_00.npy',
                                                             '../../data/gaia/data.angle_340.smeared_00.cov.npy'])
