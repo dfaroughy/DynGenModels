@@ -1,59 +1,88 @@
 import torch
+import h5py
+import numpy as np
 from torch.utils.data import Dataset
 from dataclasses import dataclass
-from jetnet.datasets import JetNet 
 
 from DynGenModels.datamodules.jetclass.dataprocess import PreProcessJetClassData
 
 class JetClassDataset(Dataset):
 
-    def __init__(self, configs: dataclass):
-        self.data_dir = configs.data_dir
-        self.num_particles = configs.num_particles
-        self.jet_types = configs.jet_types if isinstance(configs.jet_types, list) else [configs.jet_types]
-        self.cuts = configs.cuts
-        self.preprocess_methods = configs.preprocess 
-        self.summary_stats = None
-        
+    def __init__(self, config):
+        self.num_constituents = config.NUM_CONSTITUENTS
+        self.dim_input = config.DIM_INPUT
+        self.features = config.FEATURES
+        self.preprocess_methods = config.PREPROCESS
+        self.data_source = config.DATA_SOURCE
+        self.data_target = config.DATA_TARGET
+
         self.get_target_data()
         self.get_source_data()
 
     def __getitem__(self, idx):
         output = {}
-        output['target'] = self.particles_preprocess[idx]
-        output['source'] = self.source[idx]
-        output['mask'] = self.mask[idx]
-        output['context'] = self.jets[idx]
+        output['target'] = self.target_preprocess[idx]
+        output['source'] = self.source_preprocess[idx]
+        output['target_context'] = self.target_context[idx]
+        output['source_context'] = self.source_context[idx]
+        output['mask'] = torch.ones_like(output['target'][...,0]).unsqueeze(-1)
         return output
 
     def __len__(self):
-        return self.jets.size(0)
+        return len(self.target)
     
     def __iter__(self):
         for i in range(len(self)):
             yield self[i]
 
     def get_target_data(self):
-
-        args = {"jet_type": self.jet_types,  
-                "data_dir": self.data_dir+ str(self.num_particles),
-                "particle_features": ["etarel", "phirel", "ptrel", "mask"],
-                "num_particles": self.num_particles,
-                "jet_features": ["type", "pt", "eta", "mass"]}
-
-        particle_data, jet_data = JetNet.getData(**args)
-
-        particle_features= torch.Tensor(particle_data[..., :-1])
-        jet_features = torch.Tensor(jet_data)
-        mask = torch.Tensor(particle_data[..., -1])
-        data = PreProcessJetNetData(particle_features, jet_features, mask, cuts=self.cuts, methods=self.preprocess_methods)
-        data.apply_cuts()
-        self.particles = data.features.clone()
-        self.mask = data.mask.clone().squeeze()
-        self.jets = data.context.clone()
+        if self.data_target == 'qcd': f = h5py.File('../../data/jetclass/qcd_top_jets/qcd_N30_100k.hdf5', 'r') 
+        elif self.data_target == 'top': f = h5py.File('../../data/jetclass/qcd_top_jets/top_N30_100k.hdf5', 'r')
+        constituents = torch.Tensor(np.array(f['4_momenta']))[..., :4]
+        jets = torch.sum(constituents, dim=1)
+        jet_axis = jets.unsqueeze(1).repeat(1, self.num_constituents, 1)
+        constituents_rel = self.get_features(constituents, axis=jet_axis,  flatten_tensor=True)
+        data = PreProcessJetClassData(constituents_rel, methods=self.preprocess_methods)
+        self.target = data.features.clone()
         data.preprocess()
         self.summary_stats = data.summary_stats
-        self.particles_preprocess = data.features.clone()
+        self.target_preprocess = data.features.clone()
+        self.target_context = self.get_features(jets)
 
     def get_source_data(self):
-        self.source = torch.randn_like(self.particles, dtype=torch.float32)
+        if self.data_source == 'qcd': f = h5py.File('../../data/jetclass/qcd_top_jets/qcd_N30_100k.hdf5', 'r') 
+        elif self.data_source == 'top': f = h5py.File('../../data/jetclass/qcd_top_jets/top_N30_100k.hdf5', 'r')
+        constituents = torch.Tensor(np.array(f['4_momenta']))[..., :4]
+        jets = torch.sum(constituents, dim=1)
+        jet_axis = jets.unsqueeze(1).repeat(1, self.num_constituents, 1)
+        constituents_rel = self.get_features(constituents, axis=jet_axis,  flatten_tensor=True)
+        data = PreProcessJetClassData(constituents_rel, methods=self.preprocess_methods)
+        self.source = data.features.clone()
+        data.preprocess()
+        self.summary_stats = data.summary_stats
+        self.source_preprocess = data.features.clone()
+        self.source_context = self.get_features(jets)
+
+    def get_features(self, four_mom, axis=None, flatten_tensor=False):
+        four_mom = four_mom.reshape(-1,4) if flatten_tensor else four_mom
+        px, py, pz, e = four_mom[...,0], four_mom[...,1], four_mom[...,2], four_mom[...,3]
+        pt = torch.sqrt(px**2 + py**2)
+        eta = 0.5 * np.log( (e + pz) / (e - pz))
+        phi = np.arctan2(py, px)
+        m = torch.sqrt(e**2 - px**2 - py**2 - pz**2)
+        
+        if axis is not None:
+            axis = axis.reshape(-1,4) if flatten_tensor else axis
+            px_axis, py_axis, pz_axis, e_axis = axis[...,0], axis[...,1], axis[...,2], axis[...,3]
+            pt_axis = torch.sqrt(px_axis**2 + py_axis**2)
+            eta_axis = 0.5 * np.log( (e_axis + pz_axis) / (e_axis - pz_axis))
+            phi_axis= np.arctan2(py_axis, px_axis)
+            m_axis = torch.sqrt(e_axis**2 - px_axis**2 - py_axis**2 - pz_axis**2)
+            #...coords relative to axis:
+            pt = pt / pt_axis
+            eta = eta - eta_axis
+            phi = (phi - phi_axis + np.pi) % (2 * np.pi) - np.pi
+            m = m / m_axis
+
+        hadr_coord = torch.stack([pt, eta, phi, m], dim=1)
+        return hadr_coord.reshape(-1, self.num_constituents, 4) if flatten_tensor else hadr_coord

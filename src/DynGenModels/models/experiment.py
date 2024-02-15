@@ -134,33 +134,36 @@ class DefineModel:
 class Experiment:
     """ Experiment class for dynamic generative models.
     """
-    def __init__(self, Config, path=None, **kwargs):
+    def __init__(self, config, path=None, **kwargs):
 
         if path is None:
-            self.config = Config(**kwargs)
+            self.config = config(**kwargs)
             self.config.set_workdir(path='../../results', save_config=True)
         else:
-            self.config = Config().load(path + '/config.json')
+            self.config = config().load(path + '/config.json')
             for key, value in kwargs.items():
-                if key in ('MODEL', 'DYNAMICS', 'DATA_TARGET', 'WORKDIR'):
-                    raise ValueError('Cannot change MODEL, DYNAMICS, DATA_TARGET or WORKDIR after initialization')
+                if key in ('MODEL', 'DYNAMICS', 'DATA_TARGET', 'DATA_SOURCE', 'DATASET', 'WORKDIR'):
+                    raise ValueError('Cannot change MODEL, DYNAMICS, DATASET or WORKDIR after initialization')
                 setattr(self.config, key, value)
             self.config.WORKDIR = path
             
         #...datasets and dataloaders:
 
-        if self.config.DATA_TARGET == 'mnist':
+        if self.config.DATASET == 'mnist':
             from DynGenModels.datamodules.mnist.datasets import MNISTDataset as Dataset
             from DynGenModels.datamodules.mnist.dataloader import MNISTDataloader as Dataloader
-        elif self.config.DATA_TARGET == 'gaia':
+        elif self.config.DATASET == 'gaia':
             from DynGenModels.datamodules.gaia.datasets import GaiaDataset as Dataset
             from DynGenModels.datamodules.gaia.dataloader import GaiaDataLoader as Dataloader
-        elif self.config.DATA_TARGET == 'fermi':
+        elif self.config.DATASET == 'fermi':
             from DynGenModels.datamodules.fermi.datasets import FermiDataset as Dataset
             from DynGenModels.datamodules.fermi.dataloader import FermiDataLoader as Dataloader
-        elif self.config.DATA_TARGET == 'jetnet':
+        elif self.config.DATASET == 'jetnet':
             from DynGenModels.datamodules.jetnet.datasets import JetNetDataset as Dataset
             from DynGenModels.datamodules.jetnet.dataloader import JetNetDataLoader as Dataloader
+        elif self.config.DATASET == 'jetclass':
+            from DynGenModels.datamodules.jetclass.datasets import JetClassDataset as Dataset
+            from DynGenModels.datamodules.jetclass.dataloader import JetClassDataLoader as Dataloader
         else:
             raise ValueError('Data module not registered or implemented')
         
@@ -192,13 +195,6 @@ class Experiment:
         self.dynamics = Dynamics(self.config)
         self.net = Net(self.config)
         self.model = DefineModel(self.dynamics, self.net, self.dataloader, self.config)
-
-    def update(self, **kwargs):
-        for key, value in kwargs.items():
-            if key in ('MODEL', 'DYNAMICS', 'DATA_TARGET', 'WORKDIR'):
-                raise ValueError('Cannot change MODEL, DYNAMICS, DATA_TARGET or WORKDIR after initialization')
-            setattr(self.config, key, value)
-        self.config.save(print=False)
             
     def train(self):
         self.model.train()        

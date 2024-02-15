@@ -115,6 +115,24 @@ Config_JetNet_EPiC_CondFlowMatch = Load_Experiment_Config(data = JetNet_Config,
                                                           dynamics = CondFlowMatch_Config, 
                                                           pipeline = NeuralODE_Sampler_Config)
 
+############################################
+### Registered JetClass experiments configs ##
+############################################
+
+from DynGenModels.datamodules.jetclass.configs import JetClass_Config
+
+Config_JetClass_DeepSets_FlowMatch = Load_Experiment_Config(data = JetClass_Config,
+                                                            model = DeepSets_Config, 
+                                                            dynamics = FlowMatch_Config, 
+                                                            pipeline = NeuralODE_Sampler_Config)
+Config_JetClass_DeepSets_CondFlowMatch = Load_Experiment_Config(data = JetClass_Config,
+                                                                model = DeepSets_Config, 
+                                                                dynamics = CondFlowMatch_Config, 
+                                                                pipeline = NeuralODE_Sampler_Config)
+Config_JetClass_EPiC_CondFlowMatch = Load_Experiment_Config(data = JetClass_Config,
+                                                            model = EPiC_Config, 
+                                                            dynamics = CondFlowMatch_Config, 
+                                                            pipeline = NeuralODE_Sampler_Config)
 
 
 

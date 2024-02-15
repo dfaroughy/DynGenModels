@@ -2,31 +2,17 @@ from typing import Any
 import torch
 import numpy as np
 
-class PreProcessJetNetData:
+class PreProcessJetClassData:
 
     def __init__(self, 
                  particle_features,
-                 jet_features,
-                 mask, 
-                 cuts: dict={'num_constituents': None},
                  summary_stats: dict=None,
                  methods: list=None
                  ):
         
-        self.features = particle_features
-        self.context = jet_features
-        self.mask = mask[..., None]
+        self.features = particle_features[...,:-1] # remove the mass of constituents
         self.methods = methods
-        self.cuts = cuts
         self.summary_stats = {} if summary_stats is None else summary_stats
-
-    def apply_cuts(self):
-        if self.cuts['num_constituents'] is not None:
-            mask = self.mask.sum(dim=1).squeeze() == self.cuts['num_constituents']
-            self.features = self.features[mask]
-            self.context = self.context[mask]
-            self.mask = self.mask[mask]
-        else: pass
 
     def preprocess(self):      
         if self.methods is not None:
@@ -39,18 +25,29 @@ class PreProcessJetNetData:
     def standardize(self,  sigma: float=1.0):
         """ standardize data to have zero mean and unit variance
         """
-        self.summary_stats['mean'] = (self.features * self.mask).view(-1, self.features.shape[-1]).mean(dim=0)
-        self.summary_stats['std'] = (self.features * self.mask).view(-1, self.features.shape[-1]).std(dim=0)
+        self.summary_stats['mean'] = self.features.view(-1, self.features.shape[-1]).mean(dim=0)
+        self.summary_stats['std'] = self.features.view(-1, self.features.shape[-1]).std(dim=0)
         self.features = (self.features - self.summary_stats['mean']) * (sigma / self.summary_stats['std'])
-        self.features = self.features * self.mask
 
+    def normalize(self):
+        """ normalize data to unit interval
+        """
+        self.summary_stats['min'], _ = torch.min(self.features, dim=0)
+        self.summary_stats['max'], _ = torch.max(self.features, dim=0)
+        self.features = (self.features - self.summary_stats['min']) / ( self.summary_stats['max'] - self.summary_stats['min'])
+    
+    def logit_transform(self, alpha=1e-5):
+        """ smoothen rectified distribution with logit transform
+        """
+        self.features = self.features * (1 - 2 * alpha) + alpha
+        self.features = torch.log(self.features / (1 - self.features))
 
-class PostProcessJetNetData:
+class PostProcessFermiData:
 
     def __init__(self, 
                  data, 
                  summary_stats,
-                 methods: list=None
+                 methods: list=None                 
                  ):
         
         self.features = data
@@ -68,5 +65,14 @@ class PostProcessJetNetData:
     def inverse_standardize(self,  sigma: float=1.0):
         std = self.summary_stats['std'].to(self.features.device)
         mean = self.summary_stats['mean'].to(self.features.device)
-        self.features = self.features * (std  / sigma) + mean
+        self.features = self.features * (std / sigma) + mean
+
+    def inverse_normalize(self):
+        min = self.summary_stats['min'].to(self.features.device)
+        max = self.summary_stats['max'].to(self.features.device)
+        self.features = self.features * (max - min) + min
     
+    def inverse_logit_transform(self, alpha=1e-5):
+        exp = torch.exp(self.features)
+        self.features = exp / (1 + exp)
+        self.features = (self.features - alpha) / (1 - 2 * alpha)
