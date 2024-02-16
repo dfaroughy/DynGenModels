@@ -1,8 +1,9 @@
 import torch 
 from dataclasses import dataclass
 from torchcfm.conditional_flow_matching import ConditionalFlowMatcher, ExactOptimalTransportConditionalFlowMatcher, SchrodingerBridgeConditionalFlowMatcher 
+	
 
-class CondFlowMatching:
+class ConditionalFlowMatching:
 
 	def __init__(self, config: dataclass):
 		self.sigma_min = config.SIGMA
@@ -55,7 +56,9 @@ class CondFlowMatching:
 		"""
 		if isinstance(t, float): return t
 		return t.reshape(-1, *([1] * (x.dim() - 1)))
-	
+
+
+
 class ConditionalFlowMatching:
 
 	def __init__(self, config: dataclass):
@@ -74,10 +77,8 @@ class ConditionalFlowMatching:
 		""" conditional flow-mathcing/score-matching MSE loss
 		"""
 		self.flowmatcher(batch)
-		# print(1, self.path.shape, self.t.shape, batch['mask'].shape)
 		v = model(x=self.path, t=self.t, mask=batch['mask'])
 		u = self.u.to(v.device)
-		# print(2, v.shape, u.shape)
 		loss = torch.square(v - u)
 		return torch.mean(loss)
 
