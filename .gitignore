@@ -6,7 +6,7 @@ data
 results
 __pycache__
 experiment/__pycache__
-notebook/__pycache__
+notebook
 src/__pycache__
 test/__pycache__
 src/models/__pycache__
