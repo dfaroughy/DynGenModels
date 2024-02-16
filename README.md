@@ -1,4 +1,4 @@
-# Dynamic-based Generative Models
+# Dynamics-based Generative Models
 
 models: 
 
