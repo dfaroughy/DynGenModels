@@ -8,6 +8,7 @@ models:
 
 datasets:
 
+- MNIST
 - Gaia data
 - Fermi Galacic Center
 - JetNet
