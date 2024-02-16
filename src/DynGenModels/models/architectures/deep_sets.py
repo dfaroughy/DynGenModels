@@ -2,9 +2,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 import numpy as np
-
 import torch.nn.utils.weight_norm as weight_norm
-
+from DynGenModels.models.architectures.utils import fc_block, get_activation_function, timestep_sinusoidal_embedding
 
 class DeepSets(nn.Module):
     ''' Wrapper class for the DeepSets architecture
@@ -12,61 +11,66 @@ class DeepSets(nn.Module):
     def __init__(self, config):
         super(DeepSets, self).__init__()
         self.device = config.DEVICE
-        self.deepsets = _DeepSets(dim=config.DIM_INPUT, 
+        self.deepsets = _DeepSets(dim_features=config.DIM_INPUT, 
                                   dim_hidden=config.DIM_HIDDEN, 
-                                  num_layers_1=config.NUM_LAYERS_1,
-                                  num_layers_2=config.NUM_LAYERS_2,
-                                  pool=config.POOLING,
-                                  time_varying=True)
+                                  dim_time_embedding=config.DIM_TIME_EMB,
+                                  num_layers_phi=config.NUM_LAYERS_PHI,
+                                  num_layers_rho=config.NUM_LAYERS_RHO,
+                                  dropout=config.DROPOUT,
+                                  activation=get_activation_function(config.ACTIVATION),
+                                  pool=config.POOLING)
                         
-    def forward(self, t, x, mask):
-        t = t.unsqueeze(1).repeat(1, x.shape[1], 1)
-        x = torch.cat([x, t], dim=-1)
+    def forward(self, t, x, mask=None):
+        t = t.to(self.device)   
         x = x.to(self.device)
-        mask = mask.to(self.device) if mask is not None else None
         self.deepsets = self.deepsets.to(self.device)
-        return self.deepsets.forward(x, mask)
+        return self.deepsets.forward(t, x)
 
 
 class _DeepSets(torch.nn.Module):
     def __init__(self, 
-                 dim, 
+                 dim_features, 
                  dim_hidden=64, 
-                 num_layers_1=3,
-                 num_layers_2=3,
-                 pool='sum',
-                 time_varying=False, 
+                 activation = torch.nn.SELU(),
+                 dim_time_embedding=10,
+                 num_layers_phi=3,
+                 num_layers_rho=3,
+                 dropout=0.1,
+                 pool='sum'
                  ):
         
         super().__init__()
         
         self.pool = pool
-        self.time_varying = time_varying
-        s = 3 if pool == 'mean_sum' else 2     
-    
-        phi_layers = [torch.nn.Linear(dim + (1 if time_varying else 0), dim_hidden), torch.nn.SELU()]
-        for _ in range(num_layers_1-1): 
-            phi_layers.extend([torch.nn.Linear(dim_hidden, dim_hidden), torch.nn.SELU()])
-        phi_layers.append(torch.nn.Linear(dim_hidden, dim_hidden))
-        self.phi = torch.nn.Sequential(*phi_layers)
+        self.dim_time_embedding = dim_time_embedding
+        factor = 3 if pool == 'mean_sum' else 2  
 
-        rho_layers = [torch.nn.Linear(s * dim_hidden, dim_hidden), torch.nn.SELU()]
-        for _ in range(num_layers_2-1): 
-            rho_layers.extend([torch.nn.Linear(dim_hidden, dim_hidden), torch.nn.SELU()])
-        rho_layers.append(torch.nn.Linear(dim_hidden, dim))
-        self.rho = torch.nn.Sequential(*rho_layers)
+        self.phi = fc_block(dim_input = dim_features + dim_time_embedding, 
+                            dim_output = dim_hidden, 
+                            dim_hidden = dim_hidden, 
+                            num_layers = num_layers_phi,
+                            activation = activation, 
+                            dropout = dropout)
+        
+        self.rho = fc_block(dim_input = factor * dim_hidden, 
+                            dim_hidden = dim_hidden,
+                            dim_output = dim_features, 
+                            num_layers = num_layers_rho,
+                            activation = activation, 
+                            dropout = dropout)
 
-    def forward(self, x, mask):
-        h = self.phi(x)  # Apply phi to each point's features
-        h_sum = (h * mask).sum(1, keepdim=False)   
-        h_mean = h_sum / mask.sum(1, keepdim=False) 
+    def forward(self, t, x):
+        t_emb = timestep_sinusoidal_embedding(t, self.dim_time_embedding, max_period=10000)
+        t = t_emb.repeat(1, x.shape[1], 1)
+        x = torch.cat([x, t], dim=-1)
+        h = self.phi(x) 
+        h_sum, h_mean = h.sum(1, keepdim=False), h.mean(1, keepdim=False) 
         if self.pool == 'sum':  h_pool = h_sum  
         elif self.pool == 'mean':  h_pool = h_mean 
         elif self.pool == 'mean_sum': h_pool = torch.cat([h_mean, h_sum], dim=1)
         h_pool_repeated = h_pool.unsqueeze(1).repeat(1, x.shape[1], 1)
         enhanced_features = torch.cat([h, h_pool_repeated], dim=-1)
-        f = self.rho(enhanced_features)
-        return f
+        return self.rho(enhanced_features)
 
 
 #...EPiC Network:

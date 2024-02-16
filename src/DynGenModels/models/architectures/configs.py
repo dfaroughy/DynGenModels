@@ -36,9 +36,12 @@ class UNetLight_Config(Training_Config):
 class DeepSets_Config(Training_Config):
     MODEL : str = 'DeepSets'
     POOLING : str = 'mean_sum'
-    DIM_HIDDEN : int = 128   
-    NUM_LAYERS_1 : int = 3
-    NUM_LAYERS_2 : int = 3
+    DIM_HIDDEN : int = 64  
+    DIM_TIME_EMB : int = 4 
+    NUM_LAYERS_PHI : int = 2
+    NUM_LAYERS_RHO : int = 2
+    DROPOUT : float = 0.0
+    ACTIVATION : str = 'SELU'
 
 @dataclass
 class EPiC_Config(Training_Config):
