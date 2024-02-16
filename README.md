@@ -10,7 +10,7 @@ datasets:
 
 - MNIST
 - Gaia data
-- Fermi Galacic Center
-- JetNet
-- JetClass
-- Calorimeter showers (to be added)
+- Fermi Galactic Center data
+- Jet-Net
+- Jet-Class
+- LHC Calorimeter showers (to be added)
