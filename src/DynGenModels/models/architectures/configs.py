@@ -37,6 +37,7 @@ class DeepSets_Config(Training_Config):
     MODEL : str = 'DeepSets'
     POOLING : str = 'mean_sum'
     DIM_HIDDEN : int = 64  
+    TIME_EMBEDDING : str = 'sinusoidal'
     DIM_TIME_EMB : int = 4 
     NUM_LAYERS_PHI : int = 2
     NUM_LAYERS_RHO : int = 2
@@ -48,8 +49,11 @@ class EPiC_Config(Training_Config):
     MODEL : str = 'EPiC'
     POOLING: str = 'mean_sum'
     DIM_HIDDEN  : int = 128
+    TIME_EMBEDDING : str = 'sinusoidal'
+    DIM_TIME_EMB : int = 16
     DIM_GLOBAL : int = 10
     NUM_EPIC_LAYERS : int = 6
+    ACTIVATION : str = 'ReLU'
 
 #...Normalizing Flow Models:
 

@@ -54,6 +54,22 @@ def transformer_timestep_embedding(timesteps, embedding_dim, max_positions=10000
   assert emb.shape == (timesteps.shape[0], embedding_dim)
   return emb
 
+
+class GaussianFourierProjection(nn.Module):
+    """Gaussian random features for encoding time steps.
+
+    Inspired by https://colab.research.google.com/drive/120kYYBOVa1i0TD85RjlEkFjaWDxSFUx3?usp=sharing#scrollTo=YyQtV7155Nht
+    """
+
+    def __init__(self, embed_dim, scale=30.0, device='cpu'):
+        super().__init__()
+        self.W = nn.Parameter(torch.randn(embed_dim // 2, device=device) * scale, requires_grad=False)
+
+    def forward(self, x):
+        x_proj = x[..., None] * self.W[None, ...] * 2 * math.pi
+        return torch.cat([torch.sin(x_proj), torch.cos(x_proj)], dim=-1)
+
+
 def timestep_sinusoidal_embedding(timesteps, dim, max_period=10000):
     """Create sinusoidal timestep embeddings.
 
