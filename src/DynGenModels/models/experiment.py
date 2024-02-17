@@ -83,16 +83,24 @@ class DefineModel:
     def load(self, path: str=None, model: str=None):
         path = self.workdir if path is None else Path(path)
         if model is None:
-            self.model.load_state_dict(torch.load(path/'best_epoch_model.pth'))
-            self.best_epoch_model = deepcopy(self.model)
-            self.model.load_state_dict(torch.load(path/'last_epoch_model.pth'))
-            self.last_epoch_model = deepcopy(self.model)
+            # self.model.load_state_dict(torch.load(path/'best_epoch_model.pth'))
+            # self.best_epoch_model = deepcopy(self.model)
+            # self.model.load_state_dict(torch.load(path/'last_epoch_model.pth'))
+            # self.last_epoch_model = deepcopy(self.model)
+            self.best_epoch_model = type(self.model)(self.config)
+            self.last_epoch_model = type(self.model)(self.config)
+            self.best_epoch_model.load_state_dict(torch.load(path/'best_epoch_model.pth', map_location=(torch.device('cpu') if self.config.DEVICE=='cpu' else None)))
+            self.last_epoch_model.load_state_dict(torch.load(path/'last_epoch_model.pth', map_location=(torch.device('cpu') if self.config.DEVICE=='cpu' else None)))
         elif model == 'best':
-            self.model.load_state_dict(torch.load(path/'best_epoch_model.pth', map_location=(torch.device('cpu') if self.config.DEVICE=='cpu' else None)))
-            self.best_epoch_model = deepcopy(self.model)
+            # self.model.load_state_dict(torch.load(path/'best_epoch_model.pth', map_location=(torch.device('cpu') if self.config.DEVICE=='cpu' else None)))
+            # self.best_epoch_model = deepcopy(self.model)
+            self.best_epoch_model = type(self.model)(self.config)
+            self.best_epoch_model.load_state_dict(torch.load(path/'best_epoch_model.pth', map_location=(torch.device('cpu') if self.config.DEVICE=='cpu' else None)))
         elif model == 'last':
-            self.model.load_state_dict(torch.load(path/'last_epoch_model.pth'))
-            self.last_epoch_model = deepcopy(self.model)
+            # self.model.load_state_dict(torch.load(path/'last_epoch_model.pth'))
+            # self.last_epoch_model = deepcopy(self.model)
+            self.last_epoch_model = type(self.model)(self.config)
+            self.last_epoch_model.load_state_dict(torch.load(path/'last_epoch_model.pth', map_location=(torch.device('cpu') if self.config.DEVICE=='cpu' else None)))
         else: raise ValueError("which_model must be either 'best', 'last', or None")
 
     def _save_best_epoch_model(self, improved):
@@ -181,7 +189,7 @@ class Experiment:
         if self.config.MODEL == 'MLP': from DynGenModels.models.architectures.deep_nets import MLP as Net
         elif self.config.MODEL == 'ResNet': from DynGenModels.models.architectures.deep_nets import ResNet as Net
         elif self.config.MODEL == 'DeepSets': from DynGenModels.models.architectures.deep_sets import DeepSets as Net
-        elif self.config.MODEL == 'EPiC': from DynGenModels.models.architectures.deep_sets import EPiC_Network as Net
+        elif self.config.MODEL == 'EPiC': from DynGenModels.models.architectures.deep_sets import EPiC as Net
         elif self.config.MODEL == 'MAF_Affine': from DynGenModels.models.architectures.nflow_nets import MAFAffine as Net
         elif self.config.MODEL == 'MAF_RQS': from DynGenModels.models.architectures.nflow_nets import MAFPiecewiseRQS as Net
         elif self.config.MODEL == 'Coupling_RQS': from DynGenModels.models.architectures.nflow_nets import CouplingsPiecewiseRQS as Net
