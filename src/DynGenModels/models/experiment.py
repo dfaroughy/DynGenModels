@@ -210,7 +210,7 @@ class Experiment:
     def load(self, path=None, model='best'):
         self.model.load(path, model)
 
-    def generate_samples(self, input_source=None, Preprocessor=None, PostProcessor=None):
+    def generate_samples(self, input_source=None, Preprocessor=None, Postprocessor=None, best_model=True):
 
         #...inference pipline:
         
@@ -219,9 +219,9 @@ class Experiment:
 
         self.pipeline = Pipeline(trained_model=self.model, 
                                 preprocessor=Preprocessor,
-                                postprocessor=PostProcessor,
+                                postprocessor=Postprocessor,
                                 config=self.config,
-                                best_epoch_model=True)
+                                best_epoch_model=best_model)
         
         if input_source is None: input_source = self.dataset.source_test
         self.pipeline.generate_samples(input_source)
