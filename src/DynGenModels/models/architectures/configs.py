@@ -7,10 +7,12 @@ from DynGenModels.models.configs import Training_Config
 @dataclass
 class MLP_Config(Training_Config):
     MODEL : str = 'MLP'
-    DIM_HIDDEN : int = 128   
-    dim_time_emb : int = None
-    num_layers : int = 3
-    activation : str = 'ReLU'
+    DIM_HIDDEN : int = 128  
+    TIME_EMBEDDING : str = 'sinusoidal'
+    DIM_TIME_EMB : int = 16
+    NUM_LAYERS : int = 3
+    DROPOUT : float = 0.0
+    ACTIVATION : str = 'ReLU'
 
 @dataclass
 class ResNet_Config(Training_Config):
