@@ -48,7 +48,7 @@ class FlowMatchPipeline:
         if self.preprocessor is not None:
             self.stats = self.trained_model.dataloader.datasets.summary_stats
             samples = self.preprocessor(samples, methods=self.trained_model.dataloader.datasets.preprocess_methods, summary_stats=self.stats)
-            samples.preprocess(format=False)
+            samples.preprocess()
             return samples.features
         else:
             return samples
