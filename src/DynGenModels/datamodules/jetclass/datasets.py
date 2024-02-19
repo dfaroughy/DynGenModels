@@ -23,8 +23,6 @@ class JetClassDataset(Dataset):
         output = {}
         output['target'] = self.target_preprocess[idx]
         output['source'] = self.source_preprocess[idx]
-        output['target_context'] = self.target_context[idx]
-        output['source_context'] = self.source_context[idx]
         output['mask'] = torch.ones_like(output['target'][...,0]).unsqueeze(-1)
         return output
 
@@ -40,28 +38,43 @@ class JetClassDataset(Dataset):
         elif self.data_target == 'top': f = h5py.File('../../data/jetclass/qcd_top_jets/top_N30_100k.hdf5', 'r')
         constituents = torch.Tensor(np.array(f['4_momenta']))[..., :4]
         jets = torch.sum(constituents, dim=1)
-        jet_axis = jets.unsqueeze(1).repeat(1, self.num_constituents, 1)
-        constituents_rel = self.get_features(constituents, axis=jet_axis,  flatten_tensor=True)
-        data = PreProcessJetClassData(constituents_rel, methods=self.preprocess_methods)
+  
+        if self.features == 'jets':
+            data = PreProcessJetClassData(self.get_features(jets), 
+                                          contituents=False, 
+                                          methods=self.preprocess_methods)
+        else:
+            jet_axis = jets.unsqueeze(1).repeat(1, self.num_constituents, 1)        
+            data = PreProcessJetClassData(self.get_features(constituents, axis=jet_axis, flatten_tensor=True), 
+                                          contituents=True, 
+                                          methods=self.preprocess_methods)      
+
         self.target = data.features.clone()
         data.preprocess()
         self.summary_stats = data.summary_stats
         self.target_preprocess = data.features.clone()
-        self.target_context = self.get_features(jets)
 
     def get_source_data(self):
         if self.data_source == 'qcd': f = h5py.File('../../data/jetclass/qcd_top_jets/qcd_N30_100k.hdf5', 'r') 
         elif self.data_source == 'top': f = h5py.File('../../data/jetclass/qcd_top_jets/top_N30_100k.hdf5', 'r')
         constituents = torch.Tensor(np.array(f['4_momenta']))[..., :4]
         jets = torch.sum(constituents, dim=1)
-        jet_axis = jets.unsqueeze(1).repeat(1, self.num_constituents, 1)
-        constituents_rel = self.get_features(constituents, axis=jet_axis,  flatten_tensor=True)
-        data = PreProcessJetClassData(constituents_rel, methods=self.preprocess_methods)
+
+        if self.features == 'jets':
+            data = PreProcessJetClassData(self.get_features(jets), 
+                                          contituents=False, 
+                                          summary_stats=self.summary_stats,
+                                          methods=self.preprocess_methods)
+        else:
+            jet_axis = jets.unsqueeze(1).repeat(1, self.num_constituents, 1)        
+            data = PreProcessJetClassData(self.get_features(constituents, axis=jet_axis, flatten_tensor=True), 
+                                          contituents=True, 
+                                          methods=self.preprocess_methods)  
+            
         self.source = data.features.clone()
         data.preprocess()
-        self.summary_stats = data.summary_stats
         self.source_preprocess = data.features.clone()
-        self.source_context = self.get_features(jets)
+        
 
     def get_features(self, four_mom, axis=None, flatten_tensor=False):
         four_mom = four_mom.reshape(-1,4) if flatten_tensor else four_mom

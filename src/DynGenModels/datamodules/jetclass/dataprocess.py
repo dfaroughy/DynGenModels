@@ -5,12 +5,13 @@ import numpy as np
 class PreProcessJetClassData:
 
     def __init__(self, 
-                 particle_features,
+                 features,
+                 contituents: bool=True,
                  summary_stats: dict=None,
                  methods: list=None
                  ):
         
-        self.features = particle_features[...,:-1] # remove the mass of constituents
+        self.features = features[...,:-1] if contituents else features # remove the mass of constituents
         self.methods = methods
         self.summary_stats = {} if summary_stats is None else summary_stats
 
