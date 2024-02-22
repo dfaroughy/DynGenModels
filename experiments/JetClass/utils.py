@@ -45,9 +45,9 @@ def plot_consitutents(trained_model,
     
     for idx, feature in enumerate(features):
         ax = fig.add_subplot(gs[idx])
-        h, b, _ = ax.hist(jet_true[..., idx].flatten()[:num_particles], bins=bins[idx], log=True , color='silver', density=True, label='truth')
+        h, b, _ = ax.hist(jet_true[..., idx].flatten()[:num_particles], bins=bins[idx], log=True , color='silver', density=True, label='target (truth)')
         h0, _, _ = ax.hist(jet0[..., idx].flatten()[:num_particles], bins=bins[idx], log=True, color=['gold', 'darkblue', 'darkred'][idx], ls='--', histtype='step', density=True, lw=0.75, label='source (t=0)')
-        h1, _, _ = ax.hist(jet1[..., idx].flatten()[:num_particles], bins=bins[idx], log=True, color=['gold', 'darkblue', 'darkred'][idx], histtype='step', density=True, lw=0.75 , label='target (t=1)')
+        h1, _, _ = ax.hist(jet1[..., idx].flatten()[:num_particles], bins=bins[idx], log=True, color=['gold', 'darkblue', 'darkred'][idx], histtype='step', density=True, lw=0.75 , label='gen. target (t=1)')
         ax.set_xticklabels([])
         ax.set_xticks([])
         for tick in ax.yaxis.get_major_ticks():
@@ -93,8 +93,8 @@ def plot_jets(trained_model,
 
     for i in range(4):
         ax[i].hist(jet0[...,i], bins=bins[i], log=True, color=['gold', 'darkblue', 'darkred', 'purple'][i], histtype='step', ls='--', density=True, lw=0.75, label='source (t=0)')
-        ax[i].hist(jet1[...,i], bins=bins[i], log=True, color=['gold', 'darkblue', 'darkred', 'purple'][i], histtype='step', density=True, lw=0.75, label='target (t=1)')
-        ax[i].hist(jet_target[...,i], bins=bins[i], log=True, color='silver', histtype='stepfilled', density=True, lw=0.75, label='truth')
+        ax[i].hist(jet1[...,i], bins=bins[i], log=True, color=['gold', 'darkblue', 'darkred', 'purple'][i], histtype='step', density=True, lw=0.75, label='gen. target (t=1)')
+        ax[i].hist(jet_target[...,i], bins=bins[i], log=True, color='silver', histtype='stepfilled', density=True, lw=0.75, label='target (truth)')
         ax[i].set_xlabel(features[i])
         ax[i].legend(fontsize=6)
         for tick in ax[i].yaxis.get_major_ticks():

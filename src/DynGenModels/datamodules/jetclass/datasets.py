@@ -37,8 +37,8 @@ class JetClassDataset(Dataset):
             yield self[i]
 
     def get_target_data(self):
-        if self.data_target == 'qcd': f = h5py.File('/Users/dario/Dropbox/PROJECTS/ML/DynGenModels/data/jetclass/qcd_top_jets/qcd_N30_100k.hdf5', 'r') 
-        elif self.data_target == 'top': f = h5py.File('/Users/dario/Dropbox/PROJECTS/ML/DynGenModels/data/jetclass/qcd_top_jets/top_N30_100k.hdf5', 'r')
+        if self.data_target == 'qcd': f = h5py.File('/home/df630/DynGenModels/data/jetclass/qcd_top_jets/qcd_N30_100k.hdf5', 'r') 
+        elif self.data_target == 'top': f = h5py.File('/home/df630/DynGenModels/data/jetclass/qcd_top_jets/top_N30_100k.hdf5', 'r')
         constituents = torch.Tensor(np.array(f['4_momenta']))[..., :4]
         jets = torch.sum(constituents, dim=1)
         self.jets_target = self.get_features(jets)
@@ -53,8 +53,8 @@ class JetClassDataset(Dataset):
         self.target_preprocess = data.features.clone()
 
     def get_source_data(self):
-        if self.data_source == 'qcd': f = h5py.File('/Users/dario/Dropbox/PROJECTS/ML/DynGenModels/data/jetclass/qcd_top_jets/qcd_N30_100k.hdf5', 'r') 
-        elif self.data_source == 'top': f = h5py.File('/Users/dario/Dropbox/PROJECTS/ML/DynGenModels/data/jetclass/qcd_top_jets/top_N30_100k.hdf5', 'r')
+        if self.data_source == 'qcd': f = h5py.File('/home/df630/DynGenModels/data/jetclass/qcd_top_jets/qcd_N30_100k.hdf5', 'r') 
+        elif self.data_source == 'top': f = h5py.File('/home/df630/DynGenModels/data/jetclass/qcd_top_jets/top_N30_100k.hdf5', 'r')
         constituents = torch.Tensor(np.array(f['4_momenta']))[..., :4]
         jets = torch.sum(constituents, dim=1)
         self.jets_source = self.get_features(jets)
