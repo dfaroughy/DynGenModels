@@ -55,6 +55,7 @@ class EPiC_Config(Training_Config):
     DIM_TIME_EMB : int = 16
     DIM_GLOBAL : int = 10
     NUM_EPIC_LAYERS : int = 6
+    USE_SKIP_CONNECTIONS : bool = False
     ACTIVATION : str = 'ReLU'
 
 #...Normalizing Flow Models:
