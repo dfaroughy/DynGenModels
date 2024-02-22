@@ -11,7 +11,7 @@ class JetClass_Config:
     DATASET : str = 'jetclass'
     DATA_SOURCE : str = 'qcd'
     DATA_TARGET : str = 'top'
-    NUM_CONSTITUENTS : int = 30
+    MAX_NUM_CONSTITUENTS : int = 30
     FEATURES : str = 'constituents'
     PREPROCESS : List[str] = field(default_factory = lambda : ['standardize'])
     DIM_INPUT : int = 3
