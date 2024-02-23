@@ -1,6 +1,6 @@
 import torch 
 from dataclasses import dataclass
-from torchcfm.optimal_transport import OTPlanSampler
+from DynGenModels.dynamics.cnf.utils import OTPlanSampler
 
 class ConditionalFlowMatching:
 	''' Conditional Flow Matching base class
@@ -52,13 +52,13 @@ class ConditionalFlowMatching:
 
 class OptimalTransportCFM(ConditionalFlowMatching):
 	def define_source_target_coupling(self, batch):
-		OT = OTPlanSampler(method='exact')	
+		OT = OTPlanSampler()	
 		self.x0, self.x1 = OT.sample_plan(batch['source'], batch['target'])
 
 class SchrodingerBridgeCFM(ConditionalFlowMatching):
 	def define_source_target_coupling(self, batch):
 		regulator = 2 * self.sigma_min**2
-		SB = OTPlanSampler(method='exact', reg=regulator)
+		SB = OTPlanSampler(reg=regulator)
 		self.x0, self.x1 = SB.sample_plan(batch['source'], batch['target'])	
 		
 	def sample_gaussian_conditional_path(self):
@@ -73,7 +73,7 @@ class SchrodingerBridgeCFM(ConditionalFlowMatching):
 
 class ContextOptimalTransportCFM(ConditionalFlowMatching):
 	def define_source_target_coupling(self, batch):
-		OT = OTPlanSampler(method='exact')	
+		OT = OTPlanSampler()	
 		pi = OT.get_map(batch['source context'], batch['target context'])		
 		i,j = OT.sample_map(pi, batch['target'].shape[0])
 		self.x0 = batch['target'][i]  
@@ -82,9 +82,9 @@ class ContextOptimalTransportCFM(ConditionalFlowMatching):
 class ContextSchrodingerBridgeCFM(ConditionalFlowMatching):
 	def define_source_target_coupling(self, batch):
 		regulator = 2 * self.sigma_min**2
-		SB = OTPlanSampler(method='exact', reg=regulator)	
+		SB = OTPlanSampler(reg=regulator)	
 		pi = SB.get_map(batch['source context'], batch['target context'])
-		i,j = SB.sample_map(pi, self.x1.shape[0])
+		i,j = SB.sample_map(pi, batch['target'].shape[0])
 		self.x0 = batch['target'][i]  
 		self.x1 = batch['source'][j]
 

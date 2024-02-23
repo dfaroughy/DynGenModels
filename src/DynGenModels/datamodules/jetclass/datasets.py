@@ -39,11 +39,11 @@ class JetClassDataset(Dataset):
     def get_target_data(self):
         if self.data_target == 'qcd': f = h5py.File('/home/df630/DynGenModels/data/jetclass/qcd_top_jets/qcd_N30_100k.hdf5', 'r') 
         elif self.data_target == 'top': f = h5py.File('/home/df630/DynGenModels/data/jetclass/qcd_top_jets/top_N30_100k.hdf5', 'r')
-        constituents = torch.Tensor(np.array(f['4_momenta']))[..., :4]
-        self.jets = torch.sum(constituents, dim=1)
+        self.constituents = torch.Tensor(np.array(f['4_momenta']))[..., :4]
+        self.jets = torch.sum(self.constituents, dim=1)
         self.jets_target = self.get_features(self.jets)
         jet_axis = self.jets.unsqueeze(1).repeat(1, self.max_num_constituents, 1)        
-        data = PreProcessJetClassData(self.get_features(constituents, axis=jet_axis, flatten_tensor=True), 
+        data = PreProcessJetClassData(self.get_features(self.constituents, axis=jet_axis, flatten_tensor=True), 
                                       contituents=True, 
                                       methods=self.preprocess_methods)      
 
@@ -54,7 +54,7 @@ class JetClassDataset(Dataset):
 
     def get_source_data(self):
         if self.data_source == 'noise': 
-            self.source = torch.randn_like(self.target)
+            self.source = torch.randn_like(self.constituents)
             self.jets_source = torch.randn_like(self.jets)
             data = PreProcessJetClassData(self.source, 
                                           contituents=True, 
