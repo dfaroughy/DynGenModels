@@ -1,11 +1,10 @@
 import torch 
 from dataclasses import dataclass
-from torchcfm.conditional_flow_matching import ConditionalFlowMatcher, ExactOptimalTransportConditionalFlowMatcher, SchrodingerBridgeConditionalFlowMatcher 
 from torchcfm.optimal_transport import OTPlanSampler
 
-
 class ConditionalFlowMatching:
-
+	''' Conditional Flow Matching base class
+	'''
 	def __init__(self, config: dataclass):
 		self.sigma_min = config.SIGMA
 		self.coupling = config.DYNAMICS
@@ -52,68 +51,56 @@ class ConditionalFlowMatching:
 
 
 class OptimalTransportCFM(ConditionalFlowMatching):
-	
 	def define_source_target_coupling(self, batch):
 		OT = OTPlanSampler(method='exact')	
-		pi = OT.get_map(batch['source'], batch['target'])		
-		i,j = OT.sample_map(pi, self.x1.shape[0], replace=False)
-		self.x0 = batch['target'][i]  
-		self.x1 = batch['source'][j] 
+		self.x0, self.x1 = OT.sample_plan(batch['source'], batch['target'])
+
+class SchrodingerBridgeCFM(ConditionalFlowMatching):
+	def define_source_target_coupling(self, batch):
+		regulator = 2 * self.sigma_min**2
+		SB = OTPlanSampler(method='exact', reg=regulator)
+		self.x0, self.x1 = SB.sample_plan(batch['source'], batch['target'])	
+		
+	def sample_gaussian_conditional_path(self):
+		self.mean = self.t * self.x1 + (1 - self.t) * self.x0
+		std = self.sigma_min * torch.sqrt(self.t * (1 - self.t))
+		self.path = self.mean + std * torch.randn_like(self.mean)
+		
+	def conditional_vector_fields(self):
+		sigma_t_prime_over_sigma_t = (1 - 2 * self.t) / (2 * self.t * (1 - self.t) + 1e-8)
+		self.drift = self.x1 - self.x0 + sigma_t_prime_over_sigma_t * (self.path - self.mean)
+
 
 class ContextOptimalTransportCFM(ConditionalFlowMatching):
-	
 	def define_source_target_coupling(self, batch):
 		OT = OTPlanSampler(method='exact')	
 		pi = OT.get_map(batch['source context'], batch['target context'])		
-		i,j = OT.sample_map(pi, self.x1.shape[0], replace=False)
+		i,j = OT.sample_map(pi, batch['target'].shape[0])
 		self.x0 = batch['target'][i]  
 		self.x1 = batch['source'][j] 
 
-
-class SchrodingerBridgeCFM(ConditionalFlowMatching):
-	
-	def define_source_target_coupling(self, batch):
-		regulator = 2 * self.sigma_min**2
-		SB = OTPlanSampler(method='exact', reg=regulator)	
-		pi = SB.get_map(batch['source'], batch['target'])
-		i,j = SB.sample_map(pi, self.x1.shape[0], replace=False)
-		self.x0 = batch['target'][i]  
-		self.x1 = batch['source'][j]
-
-	def sample_gaussian_conditional_path(self):
-		mean = self.t * self.x1 + (1 - self.t) * self.x0
-		std = self.sigma_min * self.t * (1 - self.t)
-		self.path = mean + std * torch.randn_like(mean)
-
-	def conditional_vector_fields(self):
-		self.drift = self.x1 - self.x0 
-
 class ContextSchrodingerBridgeCFM(ConditionalFlowMatching):
-	
 	def define_source_target_coupling(self, batch):
-		""" conditional variable z = (x_0, x1) ~ pi(x_0, x_1)
-		"""	
 		regulator = 2 * self.sigma_min**2
 		SB = OTPlanSampler(method='exact', reg=regulator)	
 		pi = SB.get_map(batch['source context'], batch['target context'])
-		i,j = SB.sample_map(pi, self.x1.shape[0], replace=False)
+		i,j = SB.sample_map(pi, self.x1.shape[0])
 		self.x0 = batch['target'][i]  
 		self.x1 = batch['source'][j]
 
 	def sample_gaussian_conditional_path(self):
-		""" sample conditional path: x_t ~ p_t(x|x_0, x_1)
-		"""
-		mean = self.t * self.x1 + (1 - self.t) * self.x0
-		std = self.sigma_min * self.t * (1 - self.t)
-		self.path = mean + std * torch.randn_like(mean)
+		self.mean = self.t * self.x1 + (1 - self.t) * self.x0
+		std = self.sigma_min * torch.sqrt(self.t * (1 - self.t))
+		self.path = self.mean + std * torch.randn_like(self.mean)
 
 	def conditional_vector_fields(self):
-		""" regression objective: conditional vector field (drift) u_t(x|x_0,x_1)
-		"""
-		self.drift = self.x1 - self.x0 
+		sigma_t_prime_over_sigma_t = (1 - 2 * self.t) / (2 * self.t * (1 - self.t) + 1e-8)
+		self.drift = self.x1 - self.x0 + sigma_t_prime_over_sigma_t * (self.path - self.mean)
 
 
-#...TORCHCFM Wrappers
+# #...TORCHCFM Wrappers
+		
+# from torchcfm.conditional_flow_matching import ConditionalFlowMatcher, ExactOptimalTransportConditionalFlowMatcher, SchrodingerBridgeConditionalFlowMatcher 
 
 # class ConditionalFlowMatching:
 

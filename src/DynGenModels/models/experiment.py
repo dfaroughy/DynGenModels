@@ -169,16 +169,18 @@ class Experiment:
         
         #...dynamics:
             
-        if self.config.DYNAMICS == 'FM': from DynGenModels.dynamics.cnf.flowmatch import FlowMatching as Dynamics
+        if   self.config.DYNAMICS == 'FM': from DynGenModels.dynamics.cnf.flowmatch import FlowMatching as Dynamics
         elif self.config.DYNAMICS == 'CFM': from DynGenModels.dynamics.cnf.condflowmatch import ConditionalFlowMatching as Dynamics
         elif self.config.DYNAMICS == 'OptimalTransportCFM': from DynGenModels.dynamics.cnf.condflowmatch import OptimalTransportCFM as Dynamics
         elif self.config.DYNAMICS == 'SchrodingerBridgeCFM': from DynGenModels.dynamics.cnf.condflowmatch import SchrodingerBridgeCFM as Dynamics
+        elif self.config.DYNAMICS == 'ContextOptimalTransportCFM': from DynGenModels.dynamics.cnf.condflowmatch import ContextOptimalTransportCFM as Dynamics
+        elif self.config.DYNAMICS == 'ContextSchrodingerBridgeCFM': from DynGenModels.dynamics.cnf.condflowmatch import ContextSchrodingerBridgeCFM as Dynamics
         elif self.config.DYNAMICS == 'NormalizingFlow': from DynGenModels.dynamics.nf.normflows import NormalizingFlow as Dynamics
         else: raise ValueError('Dynamics not registered or implemented')
         
         #...models:
             
-        if self.config.MODEL == 'MLP': from DynGenModels.models.architectures.deep_nets import MLP as Net
+        if   self.config.MODEL == 'MLP': from DynGenModels.models.architectures.deep_nets import MLP as Net
         elif self.config.MODEL == 'ResNet': from DynGenModels.models.architectures.deep_nets import ResNet as Net
         elif self.config.MODEL == 'DeepSets': from DynGenModels.models.architectures.deep_sets import DeepSets as Net
         elif self.config.MODEL == 'EPiC': from DynGenModels.models.architectures.epic import EPiC as Net

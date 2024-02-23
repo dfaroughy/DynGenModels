@@ -18,7 +18,7 @@ class EPiC(nn.Module):
                                      dim_time_embedding = config.DIM_TIME_EMB,
                                      dim_hidden = config.DIM_HIDDEN, 
                                      num_layers = config.NUM_EPIC_LAYERS,
-                                     skip_connection = config.USE_SKIP_CONNECTION)
+                                     skip_connection = config.USE_SKIP_CONNECTIONS)
             
     def forward(self, t, x, mask=None):
         t = t.to(self.device)   
