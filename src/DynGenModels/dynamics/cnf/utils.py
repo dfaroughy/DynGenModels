@@ -6,6 +6,9 @@ import torch
 
 class OTPlanSampler:
 
+    ''' modified version of torchcfm.utils 
+    '''
+
     def __init__(self, reg: float = 0.05, reg_m: float = 1.0, normalize_cost: bool = False, warn: bool = True):
         self.ot_fn = pot.emd
         self.reg = reg
