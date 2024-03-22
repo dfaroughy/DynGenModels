@@ -121,7 +121,7 @@ class EPiC_layer(nn.Module):
         self.fc_local1 = weight_norm(nn.Linear(local_in_dim + latent_dim + context_dim, hid_dim))
         self.fc_local2 = weight_norm(nn.Linear(hid_dim, hid_dim))
 
-    def forward(self, x_global, x_local, context):   # shapes: x_global[b,latent], x_local[b,n,latent_local]
+    def forward(self, x_global, x_local, context):   # shapes: x_global.shape=[b, latent], x_local.shape = [b, num_points, latent_local]
         _, num_points, _ = x_local.size()
         dim_latent_global = x_global.size(1)
 
