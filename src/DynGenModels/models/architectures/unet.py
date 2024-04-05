@@ -5,7 +5,7 @@ from torchcfm.models.unet import UNetModel
 from DynGenModels.models.architectures.utils import get_activation_function, transformer_timestep_embedding
 
 
-class Unet(nn.Module):
+class UnetCFM(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.device = config.DEVICE
@@ -15,6 +15,7 @@ class Unet(nn.Module):
         self.to(self.device)
 
     def forward(self, t, x, context=None, mask=None):
+
         x = x.to(self.device)
         t = t.to(self.device)
         if context is not None: context = context.to(self.device)
@@ -22,7 +23,7 @@ class Unet(nn.Module):
         return x
     
 
-class UNetLight(nn.Module):
+class UnetNaive(nn.Module):
 
     def __init__(self, config):
 
@@ -31,7 +32,6 @@ class UNetLight(nn.Module):
         self.dim_time_emb = config.DIM_TIME_EMB
         self.dim_hidden = config.DIM_HIDDEN
         self.device = config.DEVICE
-        # self.act_fn = get_activation_function(config.ACTIVATION)
         self.Encoder()
         self.TimeEmbedding()
         self.Decoder()
@@ -64,6 +64,7 @@ class UNetLight(nn.Module):
 
         x = x.to(self.device)
         t = t.to(self.device)
+        
         if context is not None: context = context.to(self.device)
         if mask is not None: mask = mask.to(self.device)
 
@@ -73,6 +74,9 @@ class UNetLight(nn.Module):
         down1 = self.down1(x)
         down2 = self.down2(down1)
         hiddenvec = self.to_vec(down2)
+
+        print('encoder: ',down1.shape, down2.shape, hiddenvec.shape)
+
 
         # embed:
         temb1 = self.timeembed1(t).view(-1, self.dim_hidden * 2, 1, 1)
@@ -84,7 +88,10 @@ class UNetLight(nn.Module):
         up3 = self.up2(up2 + temb2, down1)
         out = self.out(torch.cat((up3, x), 1))
 
-        return out.permute(0, 2, 3, 1) 
+        print('decoder: ', up1.shape, up2.shape, up3.shape, out.shape)
+
+
+        return out
 
 
 class ResidualConvBlock(nn.Module):
@@ -143,3 +150,32 @@ class EmbedFC(nn.Module):
     def forward(self, x):
         x = x.view(-1, self.input_dim)
         return self.fc_model(x)
+
+
+if __name__ == '__main__':
+
+    from dataclasses import dataclass
+
+    @dataclass
+    class config:
+        INPUT_SHAPE=(1, 28, 28)
+        DIM_TIME_EMB=16
+        DIM_HIDDEN=32
+        DEVICE='cpu'
+        NUM_RES_BLOCKS=2
+        
+    unet_cfm = UnetCFM(config)
+    unet = UnetNaive(config)
+
+    # print(unet)
+
+    # test network with toy data
+    x = torch.randn(10, 1, 28, 28)
+    t = torch.randn(10, 1, 1 ,1)
+
+    y = unet_cfm(t, x)
+    print('unet cfm output shape:', y.shape)
+
+    y = unet(t, x)
+    print('unet naive output shape:', y.shape)
+

@@ -187,7 +187,10 @@ class Experiment:
         elif self.config.MODEL == 'MAF_Affine': from DynGenModels.models.architectures.nflow_nets import MAFAffine as Net
         elif self.config.MODEL == 'MAF_RQS': from DynGenModels.models.architectures.nflow_nets import MAFPiecewiseRQS as Net
         elif self.config.MODEL == 'Coupling_RQS': from DynGenModels.models.architectures.nflow_nets import CouplingsPiecewiseRQS as Net
-        elif self.config.MODEL == 'Unet': from DynGenModels.models.architectures.unet import Unet as Net
+        elif self.config.MODEL == 'UnetCFM': from DynGenModels.models.architectures.unet import UnetCFM as Net
+        elif self.config.MODEL == 'UnetNaive': from DynGenModels.models.architectures.unet import UnetNaive as Net
+        elif self.config.MODEL == 'Unet28x28': from DynGenModels.models.architectures.unet_mnist import Unet28x28 as Net
+
         else: raise ValueError('Model not registered or implemented')
 
         #...setup:

@@ -4,7 +4,7 @@ from DynGenModels.dynamics.nf.configs import NormFlow_Config
 from DynGenModels.pipelines.configs import NeuralODE_Sampler_Config, NormFlows_Sampler_Config
 from DynGenModels.models.architectures.configs import (MLP_Config, ResNet_Config,
                                                        DeepSets_Config, EPiC_Config,
-                                                       UNet_Config, UNetLight_Config,
+                                                       UnetCFM_Config, UnetNaive_Config, Unet28x28_Config,
                                                        MAF_RQS_Config, MAF_Affine_Config, 
                                                        Couplings_RQS_Config)
 
@@ -29,18 +29,23 @@ Config_Gauss_2_Gauss_MLP_FlowMatch = Load_Experiment_Config(data = Gauss_2_Gauss
 
 from DynGenModels.datamodules.mnist.configs import MNIST_Config
 
-Config_MNIST_UNet_FlowMatch = Load_Experiment_Config(data = MNIST_Config,
-                                                     model = UNet_Config, 
+Config_MNIST_UNetCFM_FlowMatch = Load_Experiment_Config(data = MNIST_Config,
+                                                     model = UnetCFM_Config, 
                                                      dynamics = FlowMatch_Config, 
                                                      pipeline = NeuralODE_Sampler_Config)
-Config_MNIST_UNet_CondFlowMatch = Load_Experiment_Config(data = MNIST_Config,
-                                                         model = UNet_Config, 
+Config_MNIST_UnetCFM_CondFlowMatch = Load_Experiment_Config(data = MNIST_Config,
+                                                         model = UnetCFM_Config, 
                                                          dynamics = CondFlowMatch_Config, 
                                                          pipeline = NeuralODE_Sampler_Config)
-Config_MNIST_UNetLight_CondFlowMatch = Load_Experiment_Config(data = MNIST_Config,
-                                                              model = UNetLight_Config, 
+Config_MNIST_UnetNaive_CondFlowMatch = Load_Experiment_Config(data = MNIST_Config,
+                                                              model = UnetNaive_Config, 
                                                               dynamics = CondFlowMatch_Config, 
                                                               pipeline = NeuralODE_Sampler_Config)
+Config_MNIST_Unet28x28_CondFlowMatch = Load_Experiment_Config(data = MNIST_Config,
+                                                               model = Unet28x28_Config, 
+                                                               dynamics = CondFlowMatch_Config, 
+                                                               pipeline = NeuralODE_Sampler_Config)
+
 
 #################################################
 ### Registered Fermi GEC experiments configs ####

@@ -22,17 +22,24 @@ class ResNet_Config(Training_Config):
     NUM_BLOCK_LAYERS : int = 2
 
 @dataclass
-class UNet_Config(Training_Config):
+class UnetCFM_Config(Training_Config):
     MODEL : str = 'Unet'
     DIM_HIDDEN : int = 32 # divisible by 32
     NUM_RES_BLOCKS : int = 1
 
 @dataclass
-class UNetLight_Config(Training_Config):
-    MODEL : str = 'UnetLight'
+class UnetNaive_Config(Training_Config):
+    MODEL : str = 'UnetNaive'
     DIM_HIDDEN : int = 64 # divisible by 8
     DIM_TIME_EMB : int = 64
+
+@dataclass
+class Unet28x28_Config(Training_Config):
+    MODEL : str = 'Unet28x28'
+    DIM_HIDDEN : int = 64 
+    DIM_TIME_EMB : int = 32
     ACTIVATION : str = 'GELU'
+    DROPOUT : float = 0.1
 
 @dataclass
 class DeepSets_Config(Training_Config):

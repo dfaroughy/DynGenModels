@@ -21,9 +21,9 @@ def mnist_classifier(pipeline, plot_histogram=False):
     else:
         return classes
     
-def plot_image_evolution(pipeline, nrow=10, figsize=(3, 3)):
+def plot_image_evolution(pipeline, nrow=10, figsize=(3, 3),  step_list=None):
     plt.figure(figsize=figsize)
-    step_list = [i for i in range(0, pipeline.trajectories.shape[0], 10)]
+    step_list = [i for i in range(0, pipeline.trajectories.shape[0], 10)] if step_list is None else step_list
     res = torch.cat([pipeline.trajectories[step, :nrow] for step in step_list], dim=0)
     grid = make_grid(res.view([-1, 1, 28, 28]).clip(0, 1), value_range=(0, 1), padding=0, nrow=nrow)
     img = ToPILImage()(grid)
