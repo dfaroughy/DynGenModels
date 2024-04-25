@@ -64,7 +64,8 @@ class EPiC_Config(Training_Config):
     NUM_EPIC_LAYERS : int = 6
     USE_SKIP_CONNECTIONS : bool = False
     ACTIVATION : str = 'ReLU'
-
+    DROPOUT : float = 0.1
+    
 #...Normalizing Flow Models:
 
 @dataclass

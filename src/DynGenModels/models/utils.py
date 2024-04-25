@@ -20,6 +20,7 @@ class Train_Step(nn.Module):
     def update(self, model, loss_fn, dataloader: DataLoader, optimizer):
         self.loss = 0
         self.epoch += 1
+        model.train()
         for batch in dataloader:
             optimizer.zero_grad()
             loss_current = loss_fn(model, batch)
@@ -47,6 +48,7 @@ class Validation_Step(nn.Module):
         self.loss = 0
         self.validate = bool(dataloader)
         if self.validate:
+            model.eval()
             with RNGStateFixer(seed):
                 for batch in dataloader:
                     loss_current = loss_fn(model, batch)

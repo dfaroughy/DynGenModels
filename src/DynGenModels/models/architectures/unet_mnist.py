@@ -28,15 +28,17 @@ class Unet28x28(nn.Module):
     def Encoder(self):
         self.down1 = Down(in_channels=self.dim_hidden, out_channels=self.dim_hidden, time_channels=self.dim_hidden, activation=self.act, dropout=self.dropout)
         self.down2 = Down(in_channels=self.dim_hidden, out_channels=2*self.dim_hidden, time_channels=self.dim_hidden,  activation=self.act, dropout=self.dropout)
-        self.pool = nn.Sequential(nn.AvgPool2d(7), self.act)
+        self.down3 = Down(in_channels=2*self.dim_hidden, out_channels=4*self.dim_hidden, time_channels=self.dim_hidden,  activation=self.act, dropout=self.dropout)
+        self.pool = nn.Sequential(nn.AvgPool2d(3), self.act)
 
     def Decoder(self):
-        self.up0 = nn.Sequential(nn.ConvTranspose2d(2 * self.dim_hidden, 2 * self.dim_hidden, 7, 7), 
-                                 nn.GroupNorm(8, 2 * self.dim_hidden),
+        self.up0 = nn.Sequential(nn.ConvTranspose2d(4 * self.dim_hidden, 4 * self.dim_hidden, 3, 3), 
+                                 nn.GroupNorm(8, 4 * self.dim_hidden),
                                  self.act)
-
-        self.up1 = Up(in_channels=4 * self.dim_hidden, out_channels=self.dim_hidden, time_channels=self.dim_hidden,  activation=self.act, dropout=self.dropout)
-        self.up2 = Up(in_channels=2 * self.dim_hidden, out_channels=self.dim_hidden, time_channels=self.dim_hidden,  activation=self.act, dropout=self.dropout)
+        
+        self.up1 = Up(in_channels=8 * self.dim_hidden, out_channels=self.dim_hidden, time_channels=self.dim_hidden,  activation=self.act, dropout=self.dropout)
+        self.up2 = Up(in_channels=4 * self.dim_hidden, out_channels=self.dim_hidden, time_channels=self.dim_hidden,  activation=self.act, dropout=self.dropout)
+        self.up3 = Up(in_channels=2 * self.dim_hidden, out_channels=self.dim_hidden, time_channels=self.dim_hidden,  activation=self.act, dropout=self.dropout)
         self.output = nn.Sequential(nn.Conv2d(2 * self.dim_hidden, self.dim_hidden, kernel_size=3, stride=1, padding=1),
                                     nn.GroupNorm(8, self.dim_hidden),
                                     self.act,
@@ -52,15 +54,28 @@ class Unet28x28(nn.Module):
         temb = self.time_embedding(t)
         x = self.projection(x)
 
+        print('---> x:', x.shape)
+
         #...encode:
         down1 = self.down1(x, temb)
         down2 = self.down2(down1, temb)
-        h = self.pool(down2)
-        
+        down3 = self.down3(down2, temb)
+        h = self.pool(down3)
+
+        print('---> encoder:', down1.shape, down2.shape, down3.shape, h.shape)
+
         #...decode:
-        up1 = self.up0(h)
-        up2 = self.up1(up1, temb, down2) 
-        up3 = self.up2(up2, temb, down1)
+        up0 = self.up0(h)
+        print('---> decoder:',  up0.shape)
+
+        up1 = self.up1(up0, temb, down3) 
+
+        print('---> decoder:',  up0.shape, up1.shape)
+
+
+        up2 = self.up2(up1, temb, down1)
+        up3 = self.up3(up2, temb, down1)
+
         output = self.output(torch.cat((up3, x), 1))
 
         return output
