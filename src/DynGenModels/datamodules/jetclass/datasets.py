@@ -25,7 +25,7 @@ class JetClassDataset(Dataset):
         output['target context'] = self.jets_target[idx]
         output['source context'] = self.jets_source[idx]
         output['context'] = torch.zeros_like(output['target'][..., None:1]) #...to be replaced with jet label
-        output['traget mask'] = torch.ones_like(output['target'][..., None:1])
+        output['target mask'] = torch.ones_like(output['target'][..., None:1])
         output['source mask'] = torch.ones_like(output['source'][..., None:1])
         return output
 
